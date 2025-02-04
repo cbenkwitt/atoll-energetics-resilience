@@ -1,0 +1,223 @@
+---
+title: "Fig4-resilience"
+author: "CEB"
+date: '2024-06-04'
+output: html_document
+---
+
+#load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+library(emmeans)
+
+```
+
+
+#load data
+```{r}
+#reef resilience data
+reef_res_dat<-read.csv("../data/Fig4_reef_related_resilience.csv")
+
+
+#island data (all that's necessary, beacause only Chagos)
+isl_dat<-read.csv("../data/Energetics_islands_Oct.csv")%>%
+   mutate(Site.Name = Island)
+isl_dat
+
+```
+
+
+
+#combine data
+```{r}
+reef_res_site_dat<-
+  right_join(select(isl_dat, c(Region, Atoll, Island, Site.Name, Rats)), reef_res_dat, by = "Site.Name")
+
+reef_res_site_dat
+#n = 48
+
+
+```
+
+
+#bayesian models for sediment delivery - compare location (forereef versus lagoon) and rat status
+```{r}
+
+#use log models - sampling way better and then can estimate multiplicative effect (as in figure)
+reef_res_site_dat2<-
+  reef_res_site_dat%>%
+  mutate(log_sed_delivery = log(sediment_delivery_m3_m_yr))
+  
+
+reef_sed_rat_mod_group_log2<-
+  brm(
+ log_sed_delivery~Rats*Location + (1|Atoll),
+  data = reef_res_site_dat2, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/reef_sed_rat_mod_group_log2") 
+print(reef_sed_rat_mod_group_log2) # worked :)
+
+pp_check(reef_sed_rat_mod_group_log2) #looks good
+plot(reef_sed_rat_mod_group_log2, ask = FALSE)
+
+hypothesis(reef_sed_rat_mod_group_log2, c("Ratsyes+Ratsyes:Locationlagoon <0", #0.97 - should be ratty effect for lagoon
+                                          "Ratsyes<0", #.93 should be ratty effect for fore-reef
+                                          "Locationlagoon>0", #.96 test for lagoon effect around non-ratty islands 
+                                          "Locationlagoon+Ratsyes:Locationlagoon >0")) #.96 test for lagoon effect (around ratty islands) 
+
+```
+
+
+#try extract estimates from  model for sediment delivery:
+```{r}
+
+reef_sed_rat_mod_group_log2
+
+##extract emmeans----
+reef_sed_rat_mod_group_log2.rg <- update(ref_grid(reef_sed_rat_mod_group_log2), tran = "log") #THIS LINE IS CLUTCH*** Now don't have to use link transformations, can use log response and still backtransform with emmeans
+
+
+#full output for interaction effect:
+reef_sed_rat_mod_group_log2.rg%>%
+emmeans(c("Location", "Rats"),
+        type="response")%>%
+      contrast("revpairwise") 
+# contrast                                   ratio lower.HPD upper.HPD
+# lagoon no / forereef shallow no            2.667    0.5829     6.761
+# forereef shallow yes / forereef shallow no 0.439    0.0839     1.135
+# forereef shallow yes / lagoon no           0.165    0.0345     0.445
+# lagoon yes / forereef shallow no           0.957    0.2261     2.384
+# lagoon yes / lagoon no                     0.356    0.0731     0.900
+# lagoon yes / forereef shallow yes          2.173    0.4379     5.590
+
+
+#full output for interaction effect (reversed order):
+reef_sed_rat_mod_group_log2.rg%>%
+emmeans(c("Location", "Rats"),
+        type="response")%>%
+      contrast("pairwise")
+# contrast                                   ratio lower.HPD upper.HPD
+# forereef shallow no / lagoon no            0.375    0.0802     0.938
+# forereef shallow no / forereef shallow yes 2.276    0.4965     5.880
+# forereef shallow no / lagoon yes           1.045    0.2384     2.606
+# lagoon no / forereef shallow yes           6.066    1.0301    15.630
+# lagoon no / lagoon yes                     2.810    0.6241     7.051
+# forereef shallow yes / lagoon yes          0.460    0.1074     1.209
+
+
+###each group: 
+reef_sed_rat_mod_group_log2.rg%>%
+emmeans("Rats", 
+        by=c("Location"),
+        type="response")
+#Location = forereef shallow:
+# Rats response lower.HPD upper.HPD
+# no     0.0618   0.00379    0.1794
+# yes    0.0271   0.00186    0.0824
+
+#Location = lagoon:
+# Rats response lower.HPD upper.HPD
+# no     0.1632   0.01130    0.4788
+# yes    0.0585   0.00244    0.1747
+
+#Point estimate displayed: median 
+#Results are back-transformed from the log scale 
+#HPD interval probability: 0.95 
+
+```
+
+
+#bayesian models for reef accretion
+```{r}
+#can't log response because it goes below 0:
+
+reef_accr_rat_mod_group2<-
+  brm(
+ reef_accretion_2.0_mm_yr~Rats*Location + (1|Atoll),
+  data = reef_res_site_dat, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/reef_accr_rat_mod_group2") 
+print(reef_accr_rat_mod_group2) 
+
+
+# do some checks:
+pp_check(reef_accr_rat_mod_group2) #looks good
+plot(reef_accr_rat_mod_group2, ask = FALSE) #looks good
+
+#test hypotheses:
+hypothesis(reef_accr_rat_mod_group2, c("Ratsyes+Ratsyes:Locationlagoon <0", #0.99 - should be ratty effect for lagoon
+                                          "Ratsyes<0", #.85 should be ratty effect for fore-reef
+                                          "Locationlagoon>0", #test for lagoon effect around non-ratty islands #1.0
+                                          "Locationlagoon+Ratsyes:Locationlagoon >0")) #test for lagoon effect (around ratty islands) #.93
+
+
+```
+
+
+#try extracting estimates from combined model for reef accretion:
+```{r}
+
+reef_accr_rat_mod_group2 #not logged, so no need to transform...
+
+##extract emmeans----
+
+#full output for interaction effect:
+reef_accr_rat_mod_group2%>%
+emmeans(c("Location", "Rats"),
+        type="response")%>%
+      contrast("revpairwise") 
+# contrast                                   estimate lower.HPD upper.HPD
+# lagoon no - forereef shallow no               3.060     1.083     4.981
+# forereef shallow yes - forereef shallow no   -0.986    -2.898     0.927
+# forereef shallow yes - lagoon no             -4.043    -5.999    -2.167
+# lagoon yes - forereef shallow no              0.438    -1.590     2.298
+# lagoon yes - lagoon no                       -2.635    -4.531    -0.684
+# lagoon yes - forereef shallow yes             1.427    -0.512     3.383
+
+
+#full output for interaction effect (reversed order):
+reef_accr_rat_mod_group2%>%
+emmeans(c("Location", "Rats"),
+        type="response")%>%
+      contrast("pairwise")
+# contrast                                   estimate lower.HPD upper.HPD
+# forereef shallow no - lagoon no              -3.060    -4.981    -1.083
+# forereef shallow no - forereef shallow yes    0.986    -0.927     2.898
+# forereef shallow no - lagoon yes             -0.438    -2.298     1.590
+# lagoon no - forereef shallow yes              4.043     2.167     5.999
+# lagoon no - lagoon yes                        2.635     0.684     4.531
+# forereef shallow yes - lagoon yes            -1.427    -3.383     0.512
+
+
+
+###each group: 
+reef_accr_rat_mod_group2%>%
+emmeans("Rats", 
+        by=c("Location"),
+        type="response")
+#Location = forereef shallow:
+# Rats response lower.HPD upper.HPD
+# no     2.83    -0.215      5.64
+# yes    1.85    -1.138      4.81
+
+#Location = lagoon:
+# Rats response lower.HPD upper.HPD
+# no     5.90     2.959      8.86
+# yes    3.29     0.226      6.13
+
+
+#Point estimate displayed: median 
+#HPD interval probability: 0.95 
+
+#so that equals: 
+2.83/1.85 #1.52973 times higher on lagoons
+5.90/3.29 #1.793313 times higher on forereefs
+
+```

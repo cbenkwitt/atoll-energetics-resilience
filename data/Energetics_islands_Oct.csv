@@ -1,0 +1,29 @@
+﻿Region,Atoll,Island,Rats,Marine.number.of.sites,Terrestrial.number.of.plots,Notes
+Seychelles,Seychelles,Fregate,no,3,3,Marine and terrestrial sites match
+Seychelles,Seychelles,Aride,no,1,2,Marine site matches one of terrestrial sites
+Seychelles,Seychelles,Cousine,no,2,2,"Marine site matches one of terrestrial sites, other marine and terrestrial sites do not match"
+Seychelles,Seychelles,Felicite,yes,2,2,Marine and terrestrial sites match
+Chagos,Salomon,Ile de la Passe,no,1,1,
+Chagos,Salomon,Ile Anglaise (SAL),yes,1,1,
+Chagos,Salomon,Ile Fouquet,yes,1,1,
+Chagos,Great Chagos Bank,Middle Brother,no,1,1,
+Chagos,Great Chagos Bank,Eagle,yes,1,1,
+Chagos,Peros Banhos,Grande Coquillage,no,1,1,
+Chagos,Peros Banhos,Yeye,yes,1,1,
+Chagos,Peros Banhos,Ile Poule,yes,1,1,
+Chagos,Peros Banhos,Grande Mapou,yes,1,1,
+Tetiaroa,Tetiaroa,Aie,no,2,1,
+Tetiaroa,Tetiaroa,Auroa,yes,1,1,
+Tetiaroa,Tetiaroa,Onetahi,yes,1,1,
+Tetiaroa,Tetiaroa,Reiono,no,2,1,
+Tetiaroa,Tetiaroa,Rimatuu,yes,2,1,
+Tetiaroa,Tetiaroa,Tauini,yes,1,1,
+Tetiaroa,Tetiaroa,Tiaraunu,yes,1,2,
+Tetiaroa,Tetiaroa,Tahuna Iti,no,0,1,
+Chagos,Peros Banhos,Ile Anglaise (PB),yes,1,0,
+Chagos,Peros Banhos,Ile Longue,no,1,0,
+Chagos,Great Chagos Bank,Nelson,no,1,0,
+Chagos,Great Chagos Bank,South Brother,no,1,0,
+Tetiaroa,Tetiaroa,Honuea,no,1,0,
+Tetiaroa,Tetiaroa,Hiranae,yes,1,0,
+Tetiaroa,Tetiaroa,Oroatera,yes,1,0,

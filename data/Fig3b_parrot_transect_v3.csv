@@ -1,0 +1,147 @@
+﻿Site.Name,Year,Month,Location,Transect,parrot_energy_MJ_m2_yr,parrot_sediment_kg_m2_yr
+Fregate H,2022,11,deep,1,0.368155987,0.536665
+Fregate H,2022,11,deep,2,0.725908534,0.99295
+Fregate H,2022,11,deep,3,0.696039658,4.396788
+Fregate H,2022,11,deep,4,0.577043815,1.264356
+Fregate H,2022,11,shallow,1,1.114284914,3.294343
+Fregate H,2022,11,shallow,2,0,0
+Fregate H,2022,11,shallow,3,0.65886841,2.052561
+Fregate H,2022,11,shallow,4,0,0
+Fregate M,2022,11,deep,1,1.073948974,5.126245
+Fregate M,2022,11,deep,2,0.699892593,3.199383
+Fregate M,2022,11,deep,3,0.666303049,2.70071
+Fregate M,2022,11,deep,4,0.651485859,2.915986
+Fregate M,2022,11,shallow,1,1.535019831,7.220751
+Fregate M,2022,11,shallow,2,2.019434551,7.112915
+Fregate M,2022,11,shallow,3,3.642661159,10.53124
+Fregate M,2022,11,shallow,4,1.977546614,10.21131
+Fregate L,2022,11,deep,1,0.063586912,0.154725
+Fregate L,2022,11,deep,2,0.271758743,0.63944
+Fregate L,2022,11,deep,3,0.45993945,0.394443
+Fregate L,2022,11,deep,4,0.475787129,0.662897
+Fregate L,2022,11,shallow,1,0,0
+Fregate L,2022,11,shallow,2,2.333455276,4.170186
+Fregate L,2022,11,shallow,3,0,0
+Fregate L,2022,11,shallow,4,0.452973029,0.388968
+Aride,2022,11,deep,1,1.039498161,0.667535
+Aride,2022,11,deep,2,1.319297195,0.898863
+Aride,2022,11,deep,3,1.469899867,0.846989
+Aride,2022,11,deep,4,0.434291457,3.517495
+Cousine E,2022,11,deep,1,0.961342395,3.52515
+Cousine E,2022,11,deep,2,0.081521915,3.277299
+Cousine E,2022,11,deep,3,0.750376831,2.928337
+Cousine E,2022,11,deep,4,0.866795932,2.177958
+Cousine W,2022,11,deep,1,0.749591054,3.239615
+Cousine W,2022,11,deep,2,0.713365839,0.13693
+Cousine W,2022,11,deep,3,0.844040847,2.640076
+Cousine W,2022,11,deep,4,0.8260794,1.735598
+Felicite W,2022,11,deep,1,0.224968841,0.54971
+Felicite W,2022,11,deep,2,0.195951898,0.781929
+Felicite W,2022,11,deep,3,0.136638925,0.431264
+Felicite W,2022,11,deep,4,0.525880261,1.967859
+Felicite E,2022,11,deep,1,0,0
+Felicite E,2022,11,deep,2,0.68279265,2.227646
+Felicite E,2022,11,deep,3,1.068761214,4.67504
+Felicite E,2022,11,deep,4,0.550773642,1.245768
+Ile de la Passe,2023,10,lagoon,1,0.451684028,1.063718244
+Ile de la Passe,2023,10,lagoon,2,0.958973825,3.60852182
+Ile de la Passe,2023,10,lagoon,3,0.385372387,0.285755962
+Ile de la Passe,2023,10,lagoon,4,0,0
+Ile Anglaise (SAL),2023,10,lagoon,1,1.004356987,4.273786552
+Ile Anglaise (SAL),2023,10,lagoon,2,0.952681377,3.765044666
+Ile Anglaise (SAL),2023,10,lagoon,3,0.248839709,0.268463191
+Ile Anglaise (SAL),2023,10,lagoon,4,1.077957696,2.877487989
+Grande Coquillage,2023,10,lagoon,1,0.00966472,2.15194E-05
+Grande Coquillage,2023,10,lagoon,2,0.255030662,0.110062112
+Grande Coquillage,2023,10,lagoon,3,2.661321104,6.868898945
+Grande Coquillage,2023,10,lagoon,4,5.74083144,14.1168099
+Ile Poule,2023,10,lagoon,1,0.596598175,0.480266138
+Ile Poule,2023,10,lagoon,2,0.013442945,0
+Ile Poule,2023,10,lagoon,3,0.948525332,6.03150079
+Ile Poule,2023,10,lagoon,4,0.547707411,1.398938876
+Middle Brother,2023,10,lagoon,1,1.73756406,5.992907979
+Middle Brother,2023,10,lagoon,2,1.131533278,3.495982441
+Middle Brother,2023,10,lagoon,3,1.742700861,8.224223976
+Middle Brother,2023,10,lagoon,4,0.253341751,0.182723213
+Eagle,2023,10,lagoon,1,0,0
+Eagle,2023,10,lagoon,2,0,0
+Eagle,2023,10,lagoon,3,0.056306805,0.216755285
+Eagle,2023,10,lagoon,4,0,0
+Nelson,2021,,lagoon,1,0.017276206,0.000642418
+Nelson,2021,,lagoon,2,0,0
+Nelson,2021,,lagoon,3,0.03634772,0.111360921
+Nelson,2021,,lagoon,4,0.105728952,0.101393813
+South Brother,2021,,lagoon,1,0,0
+South Brother,2021,,lagoon,2,0,0
+South Brother,2021,,lagoon,3,0,0
+South Brother,2021,,lagoon,4,5.761019258,17.05089122
+Grande Mapou,2021,,lagoon,1,0.297768914,1.040112301
+Grande Mapou,2021,,lagoon,2,0,0
+Grande Mapou,2021,,lagoon,3,0.937419798,0.826061787
+Grande Mapou,2021,,lagoon,4,0,0
+Ile Fouquet,2021,,lagoon,1,0.783666355,1.05928828
+Ile Fouquet,2021,,lagoon,2,1.007312877,2.421596747
+Ile Fouquet,2021,,lagoon,3,0.319684814,0.310553123
+Ile Fouquet,2021,,lagoon,4,4.188745232,5.509021613
+Ile Longue,2021,,lagoon,1,0.18125164,0.181562489
+Ile Longue,2021,,lagoon,2,1.042117141,2.091755482
+Ile Longue,2021,,lagoon,3,0.5088777,0.609243852
+Ile Longue,2021,,lagoon,4,4.459050993,8.421450705
+Ile Anglaise (PB),2021,,lagoon,1,0.664768091,2.006823241
+Ile Anglaise (PB),2021,,lagoon,2,0.667971739,3.605856196
+Ile Anglaise (PB),2021,,lagoon,3,0,0
+Ile Anglaise (PB),2021,,lagoon,4,0.949972233,2.883723938
+Yeye,2021,,lagoon,1,1.184713876,2.822380549
+Yeye,2021,,lagoon,2,0.020467748,1.644238229
+Yeye,2021,,lagoon,3,0.423020042,2.152906136
+Yeye,2021,,lagoon,4,1.024063688,1.188232114
+Aie-North (Site 2),2021,11,lagoon,1,0.327647737,0.04661106
+Aie-North (Site 2),2021,11,lagoon,2,0.139954003,0.017190853
+Aie-North (Site 2),2021,11,lagoon,3,0,0
+Aie-North (Site 2),2021,11,lagoon,4,0.126926915,0.014687172
+Aie-South (Site 1),2021,11,lagoon,1,0.346899545,0.317598662
+Aie-South (Site 1),2021,11,lagoon,2,0,0
+Aie-South (Site 1),2021,11,lagoon,3,0.639792877,0.435570454
+Aie-South (Site 1),2021,11,lagoon,4,0.497138419,0.253043562
+Hiranae-Lagoon side (southwest),2021,11,lagoon,1,0.078887633,0.137793752
+Hiranae-Lagoon side (southwest),2021,11,lagoon,2,0.032148757,0.033654432
+Hiranae-Lagoon side (southwest),2021,11,lagoon,3,0.46504604,0.083533857
+Hiranae-Lagoon side (southwest),2021,11,lagoon,4,0.003024754,0.006451962
+Hiranae/Auroa-Hoa,2021,11,lagoon,1,0.090932355,0.177592611
+Hiranae/Auroa-Hoa,2021,11,lagoon,2,0.311449389,0.553036715
+Hiranae/Auroa-Hoa,2021,11,lagoon,3,0.421893607,0.288735243
+Hiranae/Auroa-Hoa,2021,11,lagoon,4,0.359279081,0.268066799
+Honuea-Southwest point,2021,11,lagoon,1,0,0
+Honuea-Southwest point,2021,11,lagoon,2,0.029338018,0.007412849
+Honuea-Southwest point,2021,11,lagoon,3,0.021932559,0.004912625
+Honuea-Southwest point,2021,11,lagoon,4,0.434435311,0.2924582
+Onetahi-Airstrip/resort,2021,11,lagoon,1,0.065449474,0.127075456
+Onetahi-Airstrip/resort,2021,11,lagoon,2,0.087199838,0.189737281
+Onetahi-Airstrip/resort,2021,11,lagoon,3,0.226863741,0.301568842
+Onetahi-Airstrip/resort,2021,11,lagoon,4,0.052570003,0.070992072
+Oroatera-Lagoon side (southwest),2021,11,lagoon,1,0.009897988,0.005152037
+Oroatera-Lagoon side (southwest),2021,11,lagoon,2,0,0
+Oroatera-Lagoon side (southwest),2021,11,lagoon,3,0.015604178,0.017899244
+Oroatera-Lagoon side (southwest),2021,11,lagoon,4,0.067203452,0.056971374
+Reiono-Exposed (southeast),2021,11,lagoon,1,0.284200987,0.285595745
+Reiono-Exposed (southeast),2021,11,lagoon,2,0.639610506,0.455071087
+Reiono-Exposed (southeast),2021,11,lagoon,3,1.284344018,1.251281717
+Reiono-Exposed (southeast),2021,11,lagoon,4,0.088147207,0.118107594
+Reiono-Protected (southwest),2021,11,lagoon,2,0.00221565,0.004588518
+Reiono-Protected (southwest),2021,11,lagoon,3,2.495122815,1.375245184
+Reiono-Protected (southwest),2021,11,lagoon,4,0.069814738,0.008235295
+Reiono-Protected (southwest),2021,11,lagoon,1,0.225379602,0.181746111
+Rimatuu-Exposed (southeast),2021,11,lagoon,1,0.688993029,0.694508841
+Rimatuu-Exposed (southeast),2021,11,lagoon,2,0.716315393,0.638903195
+Rimatuu-Exposed (southeast),2021,11,lagoon,3,1.148247286,0.937840878
+Rimatuu-Exposed (southeast),2021,11,lagoon,4,0.115679259,0.105899343
+Rimatuu-Protected (southwest),2021,11,lagoon,1,0.871393626,0.811393223
+Rimatuu-Protected (southwest),2021,11,lagoon,2,0.331440269,0.402057034
+Rimatuu-Protected (southwest),2021,11,lagoon,3,0.250306506,0.345915941
+Rimatuu-Protected (southwest),2021,11,lagoon,4,0.887169874,0.95309398
+Tauini-Hoa,2021,11,lagoon,1,0.508478489,0.347770335
+Tauini-Hoa,2021,11,lagoon,2,0.084032929,0.01031598
+Tauini-Hoa,2021,11,lagoon,3,0.219262772,0.277039289
+Tauini-Hoa,2021,11,lagoon,4,0,0
+Tiaraunu-Lagoon (southeast),2021,11,lagoon,1,0.123226386,0.081222562
+Tiaraunu-Lagoon (southeast),2021,11,lagoon,2,0.0029032,0

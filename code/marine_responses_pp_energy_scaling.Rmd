@@ -1,0 +1,318 @@
+---
+title: "Fig3-metabolism-carbonate-sediement-production"
+author: "CEB"
+date: '2024-06-04'
+output: html_document
+---
+
+
+#load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+#for extracting effects:
+library(emmeans)
+
+#scientific notation funny in some of csvs, fix:
+options(scipen=999)
+
+```
+
+
+#load data
+```{r}
+#coral data
+coral_met_function_dat<-read.csv("../data/Fig3a_coral_transect.csv")
+
+#parrotfish data
+herb_met_function_dat<-read.csv("../data/Fig3b_parrot_transect_v3.csv")
+
+#site data (to get region and atoll)
+site_dat<-read.csv("../data/Energetics_sites_Oct.csv")
+site_dat
+```
+
+
+
+#combine data
+```{r}
+site_dat2<-
+  site_dat%>%
+  mutate(Site.Name = Marine.Site.Names)
+
+
+coral_met_function_dat_site<-
+  right_join(select(site_dat2, c(Region, Atoll, Island, Site.Name, Rats)), coral_met_function_dat, by = "Site.Name")
+
+coral_met_function_dat_site
+#n = 24 transects
+
+herb_met_function_dat_site<-
+  right_join(select(site_dat2, c(Region, Atoll, Island, Site.Name, Rats)), herb_met_function_dat, by = "Site.Name")
+
+herb_met_function_dat_site
+#n = 146 transects, need to exclude shallow seychelles transects, combine fregate H & M
+
+herb_met_function_dat_site_noSS<-
+  herb_met_function_dat_site%>%
+  filter(Location!="shallow")
+herb_met_function_dat_site_noSS
+#now n = 134 transects
+
+herb_met_function_dat_site_noSS%>%
+  group_by(Site.Name)%>%
+  summarize(n_trans = length(Transect))
+#n = 34 sites
+
+herb_met_function_dat_site_noSS_FrHM_wTia<-
+  herb_met_function_dat_site_noSS%>%
+  mutate(Site.Name2 = if_else(Site.Name == "Fregate H"|Site.Name=="Fregate M", "Fregate H-M", Site.Name))%>%
+  relocate(Site.Name2, .after = Site.Name)
+herb_met_function_dat_site_noSS_FrHM_wTia
+#n  = 134 transects
+
+herb_met_function_dat_site_noSS_FrHM_wTia%>%
+  group_by(Site.Name)%>%
+  summarize(n_trans = length(Transect))
+#n = 34 sites
+
+herb_met_function_dat_site_noSS_FrHM_wTia%>%
+  group_by(Island)%>%
+  summarize(n_trans = length(Transect))
+#n = 27 islands - good all matches other file
+
+##add in new group-level effects-----
+herb_met_function_dat_site_noSS_FrHM_wTia<-
+  herb_met_function_dat_site_noSS_FrHM_wTia%>%
+  mutate(Atoll_or_Island = case_when(Region == "Seychelles" ~ Island,
+                                     Region == "Tetiaroa" ~ Region,
+                                     Region == "Chagos" ~ Atoll))%>%
+  relocate(Atoll_or_Island, .after = Atoll)
+herb_met_function_dat_site_noSS_FrHM_wTia
+
+
+```
+
+
+###parrotfish models----
+```{r}
+
+#center and scale:-----
+herb_met_function_dat_site_noSS_FrHM_wTia<-
+  herb_met_function_dat_site_noSS_FrHM_wTia%>%
+  mutate(parrot_energy_MJ_m2_yr_cs = base::scale(parrot_energy_MJ_m2_yr, center = TRUE, scale = TRUE),
+         parrot_energy_MJ_m2_yr_c = base::scale(parrot_energy_MJ_m2_yr, center = TRUE, scale = FALSE))
+
+#linear model not sampling peak at all, log-log model is much better fit:
+
+###log-log models:----
+herb_met_function_dat_site_noSS_FrHM_wTia2<-
+  herb_met_function_dat_site_noSS_FrHM_wTia%>%
+  mutate(log_parrot_energy = log(parrot_energy_MJ_m2_yr+1),
+         log_parrot_energy_c = base::scale(log_parrot_energy, center = TRUE, scale = FALSE),
+         log_parrot_sediment = log(parrot_sediment_kg_m2_yr+1))
+
+
+
+parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia<-
+  brm(
+ log_parrot_sediment~log_parrot_energy_c + (1|Region) + (1|Region:Atoll_or_Island),
+  data = herb_met_function_dat_site_noSS_FrHM_wTia2, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia") 
+print(parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia) ##2 divergent trans, but not too bad
+
+# do some checks:
+pp_check(parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia) #now looks much better than non-log**
+plot(parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia) #looks good
+
+```
+
+
+
+###extract effects and plot from final parrotfish models------
+```{r}
+
+hypothesis(parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia, "log_parrot_energy_c>0") #1	*
+
+
+###extract outputs log model--------
+#extract effects----
+parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia %>%
+  spread_draws(b_log_parrot_energy_c) %>%
+  median_hdi(b_log_parrot_energy_c)
+#effect         lower        upper   width  point  interval
+#1.329715	      1.169449	1.482861	.95     median    hpdi
+
+
+parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia %>%
+  spread_draws(b_log_parrot_energy_c) %>%
+  median_hdi(2^b_log_parrot_energy_c)
+#2.51353	2.249258	2.795025	
+
+#because both x and y log-transformed, now: 
+#for each doubling in parrotfish energy requirements (mj/m2/year), parrotfish sediment production increases by a factor of 2.51 (95% HPDI = 2.25 to 2.80) 
+
+#repeat with 10-fold increase:
+parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia %>%
+  spread_draws(b_log_parrot_energy_c) %>%
+  median_hdi(10^b_log_parrot_energy_c)
+#21.36558	14.31422	29.86717	
+
+#because both x and y log-transformed, now: 
+#for each 10-fold increase in parrotfish energy requirements (mj/m2/year), parrotfish sediment production increases by a factor of 21.37 (95% HPDI = 14.31 to 29.87) 
+
+#equivalent to increase by 2137% - huge!
+
+
+#log-log model plots-----
+#effect line:
+me_herb2_log<-conditional_effects(parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia, prob = .75, effects = 'log_parrot_energy_c', plot = FALSE)[[1]]
+
+mean(herb_met_function_dat_site_noSS_FrHM_wTia2$log_parrot_energy) #0.3821432
+
+me_herb2_log_uncenter<-
+  me_herb2_log%>%
+  mutate(herbenergy_unscale = log_parrot_energy_c+0.3821432)
+
+parrot_energy_sed_plot<-
+herb_met_function_dat_site_noSS_FrHM_wTia2 %>%
+  ggplot(aes(x = log_parrot_energy, y = log_parrot_sediment)) +
+        geom_point(pch = 21, size = 2, colour = "#1F78B4", fill = "#1F78B4", alpha = .8) + #, size = .8
+    geom_line(data = me_herb2_log_uncenter, aes(x = herbenergy_unscale, y = estimate__), lwd = 1.2, colour = "#1F78B4") +
+        geom_ribbon(data = me_herb2_log_uncenter, aes(x = herbenergy_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "#1F78B4")+
+  theme_bw()+
+    xlab(expression(Parrotfish~energy~requirements~(log~MJ~m^-2~year^-1)))+
+   # ylab(expression(Parrotfish~sediment~production~(log~kg~m^-2~year^-1)))+  
+     ylab(expression(atop("Parrotfish sediment production", paste((log~kg~m^-2~year^-1)))))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+            text = element_text(size = 14),
+        legend.position=c(.8, .2),
+        legend.box = "horizontal",
+        legend.title = element_text(hjust = .5),
+        legend.box.background = element_rect()
+    )
+parrot_energy_sed_plot
+
+```
+
+
+
+#bayesian analysis - coral metabolism versus carbonate production 
+```{r}
+#center predictor----
+coral_met_function_dat_site_cs<-
+    coral_met_function_dat_site%>%
+  mutate(coral_net_PP_MJ_m2_yr_cs = base::scale(coral_net_PP_MJ_m2_yr, center = TRUE, scale = TRUE),
+         coral_net_PP_MJ_m2_yr_c = base::scale(coral_net_PP_MJ_m2_yr, center = TRUE, scale = FALSE))
+coral_met_function_dat_site_cs
+
+
+##add in group-level effects----
+coral_met_func_mod_group_c<-
+  brm(
+  coral_G_kg_m2_yr~coral_net_PP_MJ_m2_yr_c + (1|Atoll), #grouped by Atoll only (all Chagos)
+  data = coral_met_function_dat_site_cs, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/coral_met_func_mod_group_c") 
+print(coral_met_func_mod_group_c) #now no issues :)
+
+# do some checks:
+pp_check(coral_met_func_mod_group_c) #looks good
+plot(coral_met_func_mod_group_c) #looks good 
+
+
+```
+
+
+#Coral models - plot posteriors and extract effect size, HPDI, etc:
+```{r}
+
+#extract effects----
+coral_met_func_mod_group_c %>%
+  spread_draws(b_coral_net_PP_MJ_m2_yr_c) %>%
+  median_hdi(b_coral_net_PP_MJ_m2_yr_c)
+#effect         lower        upper   width  point  interval
+#1.497022     	1.084762	  1.905108  0.95	  median	hdi
+#for each one unit increase in coral net primary productivity (mj/m2/yr), coral carbonate production increases by 1.50 kg/m2/yr (95% HPDI = 1.08 to 1.91)
+
+#linear so no transformations...
+
+#check probability effect size > 0----
+hypothesis(coral_met_func_mod_group_c, "coral_net_PP_MJ_m2_yr_c>0")
+#evidence ratio = Inf, posterior probability = 1
+
+
+#compare difference at a few values:----
+#log 
+mean(coral_met_function_dat_site_cs$coral_net_PP_MJ_m2_yr) #2.626238
+#to match plot, use 0, 2,4,6,8:
+#need to center:
+0 - 2.626238
+2 - 2.626238
+4 - 2.626238
+6 - 2.626238
+8 - 2.626238
+
+coral_met_func_mod_group_c %>%
+  emmeans(~coral_net_PP_MJ_m2_yr_c, at = list(coral_net_PP_MJ_m2_yr_c = c(-2.626238, -0.626238, 1.373762, 3.373762, 5.373762)))
+# coral_net_PP_MJ_m2_yr_c emmean lower.HPD upper.HPD
+# 0                 -2.626   2.66    -0.484      5.11
+# 2                 -0.626   5.62     2.834      8.07
+# 4                  1.374   8.57     6.028     11.35
+# 6                  3.374  11.52     8.647     14.47
+# 8                  5.374  14.51    11.326     17.95
+
+
+#so at 0 vs versus 2 net PP, coral carbonate production % difference = 
+(5.62-2.66)/2.66*100 #111.2782
+
+#at 2 vs versus 4 net PP, coral carbonate production % difference = 
+(8.57-5.62)/5.62*100 #52.4911
+
+#at 4 vs versus 6 net PP, coral carbonate production % difference = 
+(11.52-8.57)/8.57*100 #34.4224
+
+#calculated % difference changes a lot based on starting value here*
+
+
+#effect line:
+me_coral<-conditional_effects(coral_met_func_mod_group_c, prob = .75, effects = 'coral_net_PP_MJ_m2_yr_c', plot = FALSE)[[1]]
+mean(coral_met_function_dat_site_cs$coral_net_PP_MJ_m2_yr) #2.626238
+
+me_coral_uncenter<-
+  me_coral%>%
+  mutate(coral_pp_unscale = coral_net_PP_MJ_m2_yr_c+2.626238)
+
+coral_energy_prod_plot<-
+coral_met_function_dat_site_cs %>%
+  ggplot(aes(x = coral_net_PP_MJ_m2_yr, y = coral_G_kg_m2_yr)) +
+    geom_point(pch = 21, size = 2, colour = "#FCBBA1", fill = "#FCBBA1", alpha = .8) + #, size = .8
+    geom_line(data = me_coral_uncenter, aes(x = coral_pp_unscale, y = estimate__), lwd = 1.2, colour = "#FCBBA1") +
+        geom_ribbon(data = me_coral_uncenter, aes(x = coral_pp_unscale, ymin = lower__, ymax=upper__), alpha = .2, fill = "#FCBBA1")+
+  theme_bw()+
+    xlab(expression(Coral~productivity~(MJ~m^-2~year^-1)))+
+ #   ylab(expression(Coral~carbonate~production~(kg~m^-2~year^-1)))+  
+   ylab(expression(atop("Coral carbonate production", paste((kg~m^-2~year^-1)))))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+            text = element_text(size = 14),
+        legend.position=c(.8, .2),
+        legend.box = "horizontal",
+        legend.title = element_text(hjust = .5),
+        legend.box.background = element_rect()
+    )
+coral_energy_prod_plot
+
+```

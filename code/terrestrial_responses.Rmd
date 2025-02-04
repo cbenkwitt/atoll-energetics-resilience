@@ -1,0 +1,312 @@
+---
+title: "Fig2-3-4-root-length"
+author: "CEB"
+date: '2024-11-25'
+output: html_document
+---
+
+
+#Terrestrial responses for figures 2-4: root productivity, biomass, length
+
+#load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+#for interpreting interactions:
+library(emmeans)
+
+#for plots:
+library(ggnewscale)
+
+```
+
+
+
+#load data
+```{r}
+#data from eleanor:
+root_dat<-read.csv("../data/RootData4Casey_241125.csv")
+root_dat
+
+```
+
+
+##Add Region column:
+```{r}
+root_dat<-
+  root_dat%>%
+  mutate(Region = case_when(grepl("SEY", Plot)~ "Seychelles",
+                             TRUE~ "Tetiaroa"))%>%
+  relocate(Region, .before = Motu)
+root_dat
+
+```
+
+
+##Figure 2 - root production versus native forest (and soil n15) 
+
+```{r}
+##run model with Tetiaroa for main paper (because matches arthropods, and because have soil n15 data), also checked including Fregate and results don't change:
+
+#split data, and center data----
+tet_root_dat<-
+root_dat%>%
+  filter(Region == "Tetiaroa")%>%
+    mutate(native_perc_c = base::scale(NativeForestFraction, center = TRUE, scale = FALSE),
+         rootn15_c = base::scale(RootsN15, center = TRUE, scale = FALSE),
+         soiln15_c = base::scale(SoilN15, center = TRUE, scale = FALSE))
+
+
+##tetiaroa only (use soil n15 to match lizards/arthropods)----
+tet_root_dat_log_c_mj_m2<-
+  brm(
+ log(NPP_MJ_m2_year) ~ native_perc_c * soiln15_c + (1|Motu), 
+  data = tet_root_dat, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/tet_root_dat_log_c_mj_m2") #worked fine
+
+print(tet_root_dat_log_c_mj_m2)
+pp_check(tet_root_dat_log_c_mj_m2) #looks good!!!
+plot(tet_root_dat_log_c_mj_m2, ask = FALSE)
+
+hypothesis(tet_root_dat_log_c_mj_m2, c("native_perc_c>0", #0.99
+                                        "soiln15_c>0",#0.63
+                                        "native_perc_c:soiln15_c>0")) #0.98
+
+###extract effects (emmeans)-----
+range(tet_root_dat$native_perc_c, na.rm=TRUE) #-23.40697  22.53837
+mean(tet_root_dat$native_perc_c, na.rm=TRUE) #0
+range(tet_root_dat$soiln15_c, na.rm=TRUE) #-4.913  5.367
+mean(tet_root_dat$soiln15_c, na.rm=TRUE) #0
+range(tet_root_dat$SoilN15, na.rm=TRUE) #9.09 19.37
+
+
+#at 0, ~50, 100% native forest (min, mean, max), these are the effects of soil n15 on root npp in tetiaroa: ----
+tet_root_dat_log_c_mj_m2%>%
+emtrends(~native_perc_c, var = "soiln15_c", at = list(native_perc_c = c(-23.40697, 0, 22.53837))) #, type = "response", - need to tell emmeans log-transformed to get response to work: 
+# native_perc_c soiln15_c.trend lower.HPD upper.HPD
+#         -23.4          -0.166   -0.4442     0.106
+#           0.0           0.033   -0.1254     0.214
+#          22.5           0.233   -0.0268     0.482
+
+
+#back transform soil n15 effect for high native forest:----
+exp(0.233) #1.262381
+exp(-0.0268) #0.9735559
+exp(0.482) #1.61931
+
+#back transform soil n15 effect for low native forest:
+exp(-0.166) #0.8470462
+exp(-0.4442) #0.6413371
+exp(0.106) #1.111822
+
+1-exp(0.166) #0.1805731 decrease
+1-exp(-0.4442) #0.3586629 decrease
+exp(0.106)-1 #0.1118219 increase
+
+
+#at min, mean, max soil n15 these are the effects of native forest on root npp in tetiaroa: -----
+tet_root_dat_log_c_mj_m2%>%
+emtrends(~soiln15_c, var = "native_perc_c", at = list(soiln15_c = c(-4.913, 0, 5.367))) #, type = "response", - need to tell emmeans log-transformed to get response to work: 
+# soiln15_c native_perc_c.trend lower.HPD upper.HPD
+#    -4.91            -0.00101  -0.05399    0.0516
+#      0.00             0.04134   0.00531    0.0732
+#      5.37             0.08463   0.03311    0.1507
+
+
+#back transform native forest effect for high soil n15----
+exp(0.08463) #1.088314
+exp(0.03311) #1.033664
+exp(0.1507) #1.162648
+
+#back transform native forest effect for low soil n15:
+exp(-0.00101) #0.9989905
+exp(-0.05399) #0.9474416
+exp(0.0516) #1.052954
+
+1-exp(-0.00101) #0.00100949 decrease - 0%
+1-exp(-0.05399) #0.05255842 decrease - 5.3%
+exp(0.0516)-1 #0.05295448 increase - 5.3%
+
+```
+
+#try to get relative effect sizes, using centered and scaled model for root npp versus native forest*soil n15------
+```{r}
+tet_root_dat_cs<-
+tet_root_dat%>%
+    mutate(native_perc_cs = base::scale(NativeForestFraction, center = TRUE, scale = TRUE),
+         rootn15_cs = base::scale(RootsN15, center = TRUE, scale = TRUE),
+         soiln15_cs = base::scale(SoilN15, center = TRUE, scale = TRUE))
+
+
+##tetiaroa only (use soil n15 to match lizards/arthropods)----
+tet_root_dat_log_cs_mj_m2<-
+  brm(
+ log(NPP_MJ_m2_year) ~ native_perc_cs * soiln15_cs + (1|Motu), 
+  data = tet_root_dat_cs, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/tet_root_dat_log_cs_mj_m2") #worked fine
+
+print(tet_root_dat_log_cs_mj_m2)
+pp_check(tet_root_dat_log_cs_mj_m2) #looks good!!!
+plot(tet_root_dat_log_cs_mj_m2, ask = FALSE)
+
+hypothesis(tet_root_dat_log_cs_mj_m2, c("native_perc_cs>0", #0.99
+                                        "soiln15_cs>0",#0.62
+                                        "native_perc_cs:soiln15_cs>0")) #0.98
+#Hypothesis               Estimate      Est.Error       CI.Lower        CI.Upper    Evid.Ratio      Post.Prob Star
+#(native_perc_cs) > 0	      0.60	      0.26	          0.17	          1.01	      71.07           	0.99	*
+# > 0	                      0.12	      0.32          	-0.35	           0.67	       1.62	            0.62	
+#(native_perc_cs:s... > 0	  0.44      	0.23          	0.08	            0.81	      40.88	          0.98	*
+
+#so looks like native forest has largest relative effect (0.6), compared to interaction (0.44), and then soil (0.12). is this the correct interpretation?
+
+```
+
+
+##get sample sizes:
+```{r}
+tet_root_dat_cs
+#n = 20 samples
+
+tet_root_dat_cs%>%
+  group_by(Motu)%>%
+  summarize(count_sums = length(NPP_MJ_m2_year))
+#4 measurements at each of 5 motu
+
+```
+
+
+
+#Figure 3: Root length ~ root productivity
+```{r}
+#Eleanor said likely something wrong with one core's biomass measurement - so remove (hit a coral or something):----
+root_dat_no_out<-
+  root_dat%>%
+  filter(!(Motu == "Iti"&RootCore == 1))
+
+root_dat_no_out_Tet<-
+root_dat_no_out%>%
+  filter(Region == "Tetiaroa")
+
+##center variables-----------
+root_dat_no_out_Tet_c<-
+  root_dat_no_out_Tet%>%
+   mutate(NPP_MJ_m2_year_c = base::scale(NPP_MJ_m2_year, center = TRUE, scale = FALSE))
+
+root_length_prod_linear_Tetiaroa_no_c<-
+  brm(
+  Length_Km_m2~NPP_MJ_m2_year_c + (1|Motu),
+  data = root_dat_no_out_Tet_c, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/root_length_prod_linear_Tetiaroa_no_c") 
+
+pp_check(root_length_prod_linear_Tetiaroa_no_c) #pretty good, not quite sampling true peak
+plot(root_length_prod_linear_Tetiaroa_no_c, ask = FALSE)
+
+
+print(root_length_prod_linear_Tetiaroa_no_c)
+
+##extract estimates-----
+hypothesis(root_length_prod_linear_Tetiaroa_no_c, "NPP_MJ_m2_year_c>0") #1
+
+#extract effects----
+root_length_prod_linear_Tetiaroa_no_c %>%
+  spread_draws(b_NPP_MJ_m2_year_c) %>%
+  median_hdi(b_NPP_MJ_m2_year_c)
+#1.428304	1.155698	1.677394 
+#each one unit increase in productivity associated with change in mean root length by 1.43 km/m2 (no transformations)
+
+```
+
+
+
+###FIGURE 4:--------
+#bayesian models
+```{r}
+
+#log model looked best:
+root_length_forest_cat_mod_log_no_out<-
+  brm(
+  log(Length_Km_m2)~NativeForestCover + (1|Motu),
+  data = root_dat_no_out_Tet, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/root_length_forest_cat_mod_log_no_out") 
+print(root_length_forest_cat_mod_log_no_out) #worked
+
+# do some checks:
+pp_check(root_length_forest_cat_mod_log_no_out) #looks okay
+plot(root_length_forest_cat_mod_log_no_out, ask = FALSE) #looks good
+pp_check(root_length_forest_cat_mod_log_no_out, type = "boxplot") 
+pp_check(root_length_forest_cat_mod_log_no_out, type = "violin_grouped", group = "NativeForestCover") 
+
+
+hypothesis(root_length_forest_cat_mod_log_no_out, c("NativeForestCoverUnder75<0")) #0.96 posterior probability
+
+```
+
+
+#try extracting estimates for root length versus categorical native forest - log, no error
+```{r}
+root_length_forest_cat_mod_log_no_out
+##extract emmeans----
+root_length_forest_cat_mod_log_no_out.rg <- update(ref_grid(root_length_forest_cat_mod_log_no_out), tran = "log") #THIS LINE IS CLUTCH*** Now don't have to use link transformations, can use log response and still backtransform with emmeans
+
+
+#full output for interaction effect:
+root_length_forest_cat_mod_log_no_out.rg%>%
+emmeans(c("NativeForestCover"),
+        type="response")%>%
+      contrast("pairwise") 
+# contrast           ratio lower.HPD upper.HPD
+# Over 75 / Under 75  4.58     0.019      20.7
+
+#Point estimate displayed: median 
+#Results are back-transformed from the log scale 
+#HPD interval probability: 0.95 
+
+#wide HPDIs, likely because not that many points.
+
+root_length_forest_cat_mod_log_no_out.rg%>%
+emmeans(c("NativeForestCover"),
+        type="response")
+
+root_length_forest_cat_mod_log_no_out.rg%>%
+emmeans("NativeForestCover", 
+        type="response")%>%
+  contrast("trt.vs.ctrl")
+# Under 75 / Over 75 0.218   0.00124     0.865
+
+
+root_length_forest_cat_mod_log_no_out.rg%>%
+emmeans("NativeForestCover", 
+        type="response")
+# NativeForestCover response lower.HPD upper.HPD
+# Over 75              15.80     0.697     49.52
+# Under 75              3.42     0.191      8.02
+
+
+
+#get estimates as for other models (not emmeans)----
+root_length_forest_cat_mod_log_no_out %>%
+  spread_draws(b_NativeForestCoverUnder75) %>%
+  median_hdi(exp(-b_NativeForestCoverUnder75)) #b_NativeForestCoverUnder75 
+#matches estimates from above:
+#4.580279	0.01404936	18.62117	0.95	median	hdi
+#4.580279	19.15643083	20.91153	0.95	median	hdi
+
+#not continuous interval, so repeat:
+root_length_forest_cat_mod_log_no_out %>%
+  spread_draws(b_NativeForestCoverUnder75) %>%
+  median_hdci(exp(-b_NativeForestCoverUnder75))
+#4.580279	0.01902669	20.65996	
+
+```

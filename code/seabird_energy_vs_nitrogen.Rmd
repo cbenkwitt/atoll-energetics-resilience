@@ -1,0 +1,290 @@
+---
+title: "Fig_1_seabird_nitrogen"
+author: "CEB"
+date: '2024-06-04'
+output: html_document
+---
+
+Summary: Data analysis to accompany Figure 1 - cumulative seabird nitrogen input ~ seabird energy requirements at island level.
+
+
+#set options
+```{r}
+options(scipen= 999) #because some of the excel files have sci notation in them
+
+```
+
+
+#load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+#for lmer:
+library(lme4)
+
+```
+
+
+#load data 
+```{r}
+
+#seabird data
+sb_dat_by_isl<-read.csv("../data/Fig1_seabirds_by_island.csv") #this is summed per island
+
+#site data
+site_dat<-read.csv("../data/Energetics_islands_Oct.csv") 
+
+```
+
+
+
+#combine data
+```{r}
+#combine:
+sb_site_dat<-
+  right_join(select(site_dat, c(Region, Atoll, Island, Rats)),sb_dat_by_isl,   by = "Island") %>%
+  ##add Atoll_or_island column for group-level effects:
+  mutate(Atoll_or_Island = case_when(Region == "Seychelles" ~ Island,
+                                     Region == "Tetiaroa" ~ Region,
+                                     Region == "Chagos" ~ Atoll))%>%
+  relocate(Atoll_or_Island, .after = Atoll)
+
+
+sb_site_dat
+#n = 28 islands
+```
+
+
+##quick plots of data:
+```{r}
+
+range(sb_site_dat$Ninput_kgha)
+
+#raw data:
+sb_site_dat%>%
+  ggplot(aes(x = SeabirdEnergyRequirements_MJha, y = Ninput_kgha))+
+  geom_point()+
+  stat_smooth(method = "lm")+
+  facet_wrap(~Region)
+
+#check log plots:
+sb_site_dat%>%
+  ggplot(aes(x = log(SeabirdEnergyRequirements_MJha+1), y = Ninput_kgha))+
+  geom_point()+
+  stat_smooth(method = "lm")+
+  facet_wrap(~Region)
+#looks bad
+
+sb_site_dat%>%
+  ggplot(aes(x = log(SeabirdEnergyRequirements_MJha+1), y = log(Ninput_kgha+1)))+
+  geom_point()+
+  stat_smooth(method = "lm")+
+  facet_wrap(~Region)
+#looks better than log(energy), but honestly not nearly as good as untransformed ones....
+
+sb_site_dat%>%
+  ggplot(aes(x = SeabirdEnergyRequirements_MJha, y = log(Ninput_kgha+1)))+
+  geom_point()+
+  stat_smooth(method = "lm")+
+  facet_wrap(~Region)
+#looks bad
+
+```
+
+#---------------------------ANALYSIS-----------------------------
+```{r}
+###run seperate models for each region:----
+#determined in previous files that linear models have best fit:
+
+#get data-----
+sb_site_dat_chagos<-
+ sb_site_dat%>%
+  filter(Region == "Chagos")%>%
+  mutate(SeabirdEnergyRequirements_KJha = SeabirdEnergyRequirements_MJha/1000,
+         log_SeabirdEnergyRequirements_KJha = log(SeabirdEnergyRequirements_KJha + 1),
+         SeabirdEnergyRequirements_KJha_c = base::scale(SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE),
+         log_SeabirdEnergyRequirements_KJha_c = base::scale(log_SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha = log(Ninput_kgha+1))
+
+sb_site_dat_sey<-
+ sb_site_dat%>%
+  filter(Region == "Seychelles")%>%
+   mutate(SeabirdEnergyRequirements_KJha = SeabirdEnergyRequirements_MJha/1000,
+         log_SeabirdEnergyRequirements_KJha = log(SeabirdEnergyRequirements_KJha + 1),
+         SeabirdEnergyRequirements_KJha_c = base::scale(SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE),
+         log_SeabirdEnergyRequirements_KJha_c = base::scale(log_SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha = log(Ninput_kgha+1))
+
+sb_site_dat_tet<-
+ sb_site_dat%>%
+  filter(Region == "Tetiaroa")%>%
+   mutate(SeabirdEnergyRequirements_KJha = SeabirdEnergyRequirements_MJha/1000,
+         log_SeabirdEnergyRequirements_KJha = log(SeabirdEnergyRequirements_KJha + 1),
+         SeabirdEnergyRequirements_KJha_c = base::scale(SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE),
+         log_SeabirdEnergyRequirements_KJha_c = base::scale(log_SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha = log(Ninput_kgha+1))
+
+
+##chagos-----
+seabird_n_energy_mod_chagos_r2<-
+  brm(
+ Ninput_kgha~SeabirdEnergyRequirements_KJha_c + (1|Atoll),
+  data = sb_site_dat_chagos, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/seabird_n_energy_mod_chagos_r2") 
+print(seabird_n_energy_mod_chagos_r2) #worked
+pp_check(seabird_n_energy_mod_chagos_r2) #has 3 humps, but model is capturing these well
+plot(seabird_n_energy_mod_chagos_r2)
+
+
+##seychelles-----
+seabird_n_energy_mod_sey_r2<-
+  brm(
+ Ninput_kgha~SeabirdEnergyRequirements_KJha_c, #no multiple measurements from the same atoll/island (all just Seychelles, then 1/island)
+  data = sb_site_dat_sey, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/seabird_n_energy_mod_sey_r2") 
+print(seabird_n_energy_mod_sey_r2) #worked
+pp_check(seabird_n_energy_mod_sey_r2) #looks okay, a bit funky
+plot(seabird_n_energy_mod_sey_r2)
+
+
+##tetiaroa-----
+seabird_n_energy_mod_tet_r2<-
+  brm(
+ Ninput_kgha~SeabirdEnergyRequirements_KJha_c,  #no multiple measurements from the same atoll/island (all just Seychelles, then 1/island)
+  data = sb_site_dat_tet, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/seabird_n_energy_mod_tet_r2") 
+print(seabird_n_energy_mod_tet_r2) #worked
+pp_check(seabird_n_energy_mod_tet_r2) #looks good
+plot(seabird_n_energy_mod_tet_r2)
+
+```
+
+
+#plots and effect sizes by region:-----
+```{r}
+#effect sizes and hypothesis tests: linear models-----
+hypothesis(seabird_n_energy_mod_chagos_r2, "SeabirdEnergyRequirements_KJha_c>0") #Inf	1	*
+hypothesis(seabird_n_energy_mod_sey_r2, "SeabirdEnergyRequirements_KJha_c>0") #105.67	0.99	*
+hypothesis(seabird_n_energy_mod_tet_r2, "SeabirdEnergyRequirements_KJha_c>0") #Inf	1	*
+#nearly identical to before
+
+seabird_n_energy_mod_chagos_r2 %>%
+  spread_draws(b_SeabirdEnergyRequirements_KJha_c) %>%
+  median_hdi(b_SeabirdEnergyRequirements_KJha_c)
+#1.768399	1.722915	1.819804	0.95	median	hdi 
+
+seabird_n_energy_mod_sey_r2 %>%
+  spread_draws(b_SeabirdEnergyRequirements_KJha_c) %>%
+  median_hdi(b_SeabirdEnergyRequirements_KJha_c)
+#1.114732	0.37677	1.866626		0.95	median	hdi - 
+
+seabird_n_energy_mod_tet_r2 %>%
+  spread_draws(b_SeabirdEnergyRequirements_KJha_c) %>%
+  median_hdi(b_SeabirdEnergyRequirements_KJha_c)
+#1.573326	1.509809	1.633317			0.95	median	hdi 
+
+
+```
+
+
+
+#plots from linear models:
+```{r}
+###plots-----
+library(PNWColors)
+pnw_palette("Starfish", 3) ###e69b99 - Tetiaroa #2c6184 - chagos #89689d - seychelles
+
+
+#chagos----
+me_chg_sb<-conditional_effects(seabird_n_energy_mod_chagos_r2, prob = .75, effects = 'SeabirdEnergyRequirements_KJha_c', plot = FALSE)[[1]]
+
+mean(sb_site_dat_chagos$SeabirdEnergyRequirements_KJha) #38.00885
+
+me_chg_sb_unscale<-
+  me_chg_sb%>%
+  mutate(seabird_energy_unscale = SeabirdEnergyRequirements_KJha_c+38.00885)
+
+
+sb_site_dat_chagos %>%
+  ggplot(aes(x = SeabirdEnergyRequirements_KJha, y = Ninput_kgha)) +
+     geom_jitter(alpha = .5, colour = "#2c6184", fill= "#2c6184", height = 10, width = 1) + #need to add in native forest if want that here
+    geom_line(data = me_chg_sb_unscale, aes(x = seabird_energy_unscale, y = estimate__), lwd = 1, colour = "#2c6184") +
+   geom_ribbon(data = me_chg_sb_unscale, aes(x = seabird_energy_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "gray")+
+  theme_bw()+
+    ylab("Seabird nitrogen input (kg/ha)")+
+   xlab("Seabird energy requirements (kj/ha)")+
+  ggtitle("Chagos Archipelago")+
+    xlim(c(-10, 210))+
+  ylim(c(-10,400))+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+    #            text = element_text(size = 24),
+        legend.position='none')
+
+
+##tetiaroa
+me_tet_sb<-conditional_effects(seabird_n_energy_mod_tet_r2, prob = .75, effects = 'SeabirdEnergyRequirements_KJha_c', plot = FALSE)[[1]]
+
+mean(sb_site_dat_tet$SeabirdEnergyRequirements_KJha) #20.11354
+
+me_tet_sb_unscale<-
+  me_tet_sb%>%
+  mutate(seabird_energy_unscale = SeabirdEnergyRequirements_KJha_c+20.11354)
+
+
+sb_site_dat_tet %>%
+  ggplot(aes(x = SeabirdEnergyRequirements_KJha, y = Ninput_kgha)) +
+     geom_jitter(alpha = .5, colour = "#e69b99", fill= "#e69b99", height = 10, width = 1) + #need to add in native forest if want that here
+    geom_line(data = me_tet_sb_unscale, aes(x = seabird_energy_unscale, y = estimate__), lwd = 1, colour = "#e69b99") +
+   geom_ribbon(data = me_tet_sb_unscale, aes(x = seabird_energy_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "gray")+
+  theme_bw()+
+    ylab("Seabird nitrogen input (kg/ha)")+
+   xlab("Seabird energy requirements (kj/ha)")+
+  ggtitle("Tetiaroa")+
+    xlim(c(-10, 210))+
+  ylim(c(-10,400))+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+    #            text = element_text(size = 24),
+        legend.position='none')
+
+##Seychelles
+me_sey_sb<-conditional_effects(seabird_n_energy_mod_sey_r2, prob = .75, effects = 'SeabirdEnergyRequirements_KJha_c', plot = FALSE)[[1]]
+
+mean(sb_site_dat_sey$SeabirdEnergyRequirements_KJha) #57.70201
+
+me_sey_sb_unscale<-
+  me_sey_sb%>%
+  mutate(seabird_energy_unscale = SeabirdEnergyRequirements_KJha_c+57.70201)
+
+
+sb_site_dat_sey %>%
+  ggplot(aes(x = SeabirdEnergyRequirements_KJha, y = Ninput_kgha)) +
+     geom_jitter(alpha = .5, colour = "#89689d", fill= "#89689d", height = 10, width = 1) + #need to add in native forest if want that here
+    geom_line(data = me_sey_sb_unscale, aes(x = seabird_energy_unscale, y = estimate__), lwd = 1, colour = "#89689d") +
+   geom_ribbon(data = me_sey_sb_unscale, aes(x = seabird_energy_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "gray")+
+  theme_bw()+
+    ylab("Seabird nitrogen input (kg/ha)")+
+   xlab("Seabird energy requirements (kj/ha)")+
+  ggtitle("Seychelles")+
+ xlim(c(-10, 210))+
+  ylim(c(-30,400))+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+    #            text = element_text(size = 24),
+        legend.position='none')
+
+```

@@ -1,0 +1,629 @@
+---
+title: "Figure2_PLOTS"
+author: "CEB"
+date: '2024-12-06'
+output: html_document
+---
+
+##load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+#for interpreting interactions:
+library(emmeans)
+
+#for plots:
+library(ggnewscale)
+library(RColorBrewer)
+
+
+#for combining plot:
+library(cowplot)
+```
+
+
+
+####ROOTS FOR FIGURE 2-----------
+###load model and data:
+```{r}
+#load data-
+root_dat<-read.csv("../data/RootData4Casey_241125.csv")
+
+#add region column:-
+root_dat<-
+  root_dat%>%
+  mutate(Region = case_when(grepl("SEY", Plot)~ "Seychelles",
+                             TRUE~ "Tetiaroa"))%>%
+  relocate(Region, .before = Motu)
+root_dat
+
+#split data, and center data----
+tet_root_dat<-
+root_dat%>%
+  filter(Region == "Tetiaroa")%>%
+    mutate(native_perc_c = base::scale(NativeForestFraction, center = TRUE, scale = FALSE),
+         rootn15_c = base::scale(RootsN15, center = TRUE, scale = FALSE),
+         soiln15_c = base::scale(SoilN15, center = TRUE, scale = FALSE))
+
+tet_root_dat_log_c_mj_m2<-readRDS("brms/tet_root_dat_log_c_mj_m2.rds")
+
+print(tet_root_dat_log_c_mj_m2)
+
+#extract estimates for interaction:-----
+tet_root_dat_log_c_mj_m2 %>%
+  spread_draws(`b_native_perc_c:soiln15_c`) %>%
+  median_hdi(exp(`b_native_perc_c:soiln15_c`))
+#0.008446786	0.00001482532	0.01728198	0.95	median	hdi #non-exponentiated
+#1.008483	0.9999476	1.017364	#exponentiated
+
+```
+
+
+##plot---
+```{r}
+##extract effects:
+me_npp_int_log_tet_soil<-conditional_effects(tet_root_dat_log_c_mj_m2, prob = .75, 'native_perc_c:soiln15_c', plot = FALSE)[[1]]
+emmip(tet_root_dat_log_c_mj_m2, soiln15_c~native_perc_c , cov.reduce = range)
+# For numeric variables, mean + (-1:1) * SD are used as conditions.
+
+mean(tet_root_dat$SoilN15)#14.003
+mean(tet_root_dat$NativeForestFraction)#77.46163
+
+
+##new labels:
+me_npp_int_log_tet_soil_unscale2<-
+  me_npp_int_log_tet_soil%>%
+  mutate(SoilN15 = soiln15_c + 14.003,
+         NativeForestFraction =native_perc_c +77.46163, 
+         Soil_fact = as.factor(round(SoilN15, 0)))%>%
+  mutate(Soil_fact = fct_recode(Soil_fact, low = "11", mid = "14", high = "17"))%>%
+  mutate(Soil_fact = fct_relevel(Soil_fact, "high", "mid", "low"))
+
+
+rootnpp_vs_forest_soiln15_plot_log_axis<-
+tet_root_dat %>%
+  ggplot(aes(x = NativeForestFraction, y = log(NPP_MJ_m2_year))) +
+     geom_ribbon(data = me_npp_int_log_tet_soil_unscale2, aes(x = NativeForestFraction, y = estimate__, ymin = lower__, ymax = upper__, fill = Soil_fact), lwd = 0, alpha = .2) +
+geom_line(data = me_npp_int_log_tet_soil_unscale2, aes(x = NativeForestFraction, y = estimate__, colour = Soil_fact), lwd = 1.2) +
+    scale_colour_brewer(direction = -1, name = "", palette = "Greens")+#"YlOrRd"
+  scale_fill_brewer(direction = -1,  name = "", palette = "Greens")+#"YlOrRd"
+    new_scale_fill()+
+       geom_point(aes(fill =  SoilN15), pch = 21, size = 2, alpha = .9) + #, size = .8 as.factor(Birds)
+       scale_fill_distiller(direction = 1,  palette = "Greens" )+ #"YlOrRd"
+    xlab("Native forest %")+
+    ylab(expression(Fine~root~productivity~(MJ~m^-2~yr^-1)))+
+ #scale_y_continuous(labels = c(exp(0),exp(1),exp(2),exp(3),exp(4)), breaks = c(0,1,2,3,4))+
+   scale_y_continuous(labels = c(1, 2.5, 5, 10, 20, 50), breaks = c(log(1),log(2.5), log(5),log(10), log(20), log(50)))+
+  #   scale_y_continuous(labels = c(0,1, 2.5, 5, 10, 20, 50), breaks = c(0,log(1),log(2.5), log(5),log(10), log(20), log(50)))+
+  labs(fill = expression(Soil~delta^15~N))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+              text = element_text(size = 14),
+        legend.position=c(.2, .8),
+        legend.box = "horizontal",
+        legend.title = element_text(hjust = .5),
+        legend.box.background = element_rect()
+    )
+rootnpp_vs_forest_soiln15_plot_log_axis
+
+```
+
+
+####----------------MARINE DATA--------------------
+#load data
+```{r}
+#coral data
+marine_pp_dat<-read.csv("../data/Fig2c_marine_pp_w_cover.csv")
+
+#parrotfish data
+marine_energy_dat<-read.csv("../data/Fig2d_marine_energy_transect_w_parrot_v2.csv")
+
+#site data (to align marine and terrestrial)
+site_dat<-read.csv("../data/Energetics_sites_Oct.csv")
+
+#island data (to get region and atoll)
+isl_dat<-read.csv("../data/Energetics_islands_Oct.csv")
+
+#seabirds data:
+sb_dat_by_isl<-read.csv("../data/Fig1_seabirds_by_island.csv") #this is summed per island
+
+
+```
+
+
+#combine data 
+```{r}
+#Mapou messed up again - in site list it's 	Grande Mapou, in pp list it's Ile Mapou (for PP)
+marine_pp_dat2<-
+  marine_pp_dat%>%
+mutate(Site.Name = case_when(Site.Name == "Ile Mapou"~"Grande Mapou",
+                              TRUE~Site.Name))
+
+#pp and energy with site:
+site_dat_marine<-
+  site_dat%>%
+  rename(Site.Name = Marine.Site.Names)
+
+marine_pp_dat_site<-
+  right_join(site_dat_marine, marine_pp_dat2, by = "Site.Name")
+
+marine_pp_dat_site
+#n = 134 transects
+
+marine_energy_dat_site<-
+  right_join(site_dat_marine, marine_energy_dat, by = "Site.Name")
+
+marine_energy_dat_site
+#n = 134 transects
+
+
+#shallow Fregate sites already excluded, need to combine Fregate H & M:
+marine_energy_dat_site_FrHM<-
+  marine_energy_dat_site%>%
+  mutate(Site.Name2 = if_else(Site.Name == "Fregate H"|Site.Name=="Fregate M", "Fregate H-M", Site.Name))%>%
+  relocate(Site.Name2, .after = Site.Name)
+marine_energy_dat_site_FrHM
+
+
+marine_pp_dat_site_FrHM<-
+  marine_pp_dat_site%>%
+  mutate(Site.Name2 = if_else(Site.Name == "Fregate H"|Site.Name=="Fregate M", "Fregate H-M", Site.Name))%>%
+  relocate(Site.Name2, .after = Site.Name)
+marine_pp_dat_site_FrHM
+
+
+##add in new "atoll" levels-----
+marine_energy_dat_site_FrHM<-
+  marine_energy_dat_site_FrHM%>%
+  mutate(Atoll_or_Island = case_when(Region == "Seychelles" ~ Island,
+                                     Region == "Tetiaroa" ~ Region,
+                                     Region == "Chagos" ~ Atoll))%>%
+  relocate(Atoll_or_Island, .after = Atoll)
+marine_energy_dat_site_FrHM
+
+
+```
+
+##combine with seabird data----
+```{r}
+
+marine_pp_dat_site_FrHM
+sb_dat_by_isl
+
+
+#join pp:-----
+marine_sb_dat_pp_comb<-
+  left_join(marine_pp_dat_site_FrHM,
+                   sb_dat_by_isl, by = "Island")
+marine_sb_dat_pp_comb
+
+
+#looks good - now eliminate NAs
+marine_sb_pp_dat<-
+  marine_sb_dat_pp_comb%>%
+  filter(!is.na(coral_net_PP_MJ_m2_yr))
+
+
+#join energy:-----
+marine_sb_energy_dat<-
+  left_join(marine_energy_dat_site_FrHM,
+                   sb_dat_by_isl, by = "Island")
+marine_sb_energy_dat
+
+```
+
+
+###PARROTFISH------------
+#create data for parrotfish model, run it:
+```{r}
+marine_sb_energy_dat_cs<-
+  marine_sb_energy_dat%>%
+    ungroup()%>%
+  mutate(log_parrot_energy = log(Energy.Parrotfish.mj.m2.yr+1), 
+         Ninput_kgha_log = log(Ninput_kgha+1),
+         Ninput_kgha_c = base::scale(Ninput_kgha, center = TRUE, scale = FALSE),
+          Ninput_kgha_log_c = base::scale(Ninput_kgha_log, center = TRUE, scale = FALSE))
+marine_sb_energy_dat_cs
+
+parrot_sb_n_input_mod_group_log_log1<-readRDS("brms/parrot_sb_n_input_mod_group_log_log1.RDS")
+parrot_sb_n_input_mod_group_log_log1
+
+
+#check sample sizes:
+ marine_sb_energy_dat_cs%>%
+ group_by(Region, Island)%>%
+ summarize(count_n = length(Energy.Parrotfish.mj.m2.yr))
+
+```
+
+
+
+#Extract final parrotfish model estimates, make nice pltos-------
+```{r}
+
+#PP>0----
+hypothesis(parrot_sb_n_input_mod_group_log_log1, "Ninput_kgha_log_c>0")#90.95	0.99	*
+
+#extract effects----
+parrot_sb_n_input_mod_group_log_log1 %>%
+  spread_draws(b_Ninput_kgha_log_c) %>%
+  median_hdi(b_Ninput_kgha_log_c)
+#effect         lower        upper   width  point  interval
+#0.04285733   	0.006156108	0.08033537	0.95	median	hdi
+
+#needs to back-transform - log-log so: a doubling of X is associated with a change in the median of Y by a factor of 2^β1 . If (LB,UB) is a confidence interval for β1, (2^LB, 2^UB) is a confidence interval for 2β1 . Again, you could have multiplied X by 10 instead of 2, in which case a 10-fold increase in X would be associated with a change in the median of Y by a factor of 10^β1 .
+parrot_sb_n_input_mod_group_log_log1 %>%
+  spread_draws(b_Ninput_kgha_log_c) %>%
+  median_hdi(2^b_Ninput_kgha_log_c)
+#1.030152	1.004276	1.057264	0.95	median	hdi
+
+#for each doubling in N input, median parrotfish energy increases by a factor of 1.03 (95% CI = 1.00 - 1.06).
+
+
+parrot_sb_n_input_mod_group_log_log1 %>%
+  spread_draws(b_Ninput_kgha_log_c) %>%
+  median_hdi(10^b_Ninput_kgha_log_c)
+#1.103716	1.013913	1.202951	0.95	median	hdi
+
+#for each 10-fold increase in N input, parrotfish energy increases by 10.4% (95% CI = 1.4 - 20.3%).
+
+##check sample sizes:
+marine_sb_energy_dat_cs%>%
+ # group_by(Island)%>%
+  summarize(length(log_parrot_energy))
+#n = 27 islands
+#n = 134 transects
+
+#log-log plot------
+#effect line:
+me_parrot_energy_sb_loglog<-conditional_effects(parrot_sb_n_input_mod_group_log_log1, prob = .75, effects = 'Ninput_kgha_log_c', plot = FALSE)[[1]]
+
+mean(marine_sb_energy_dat_cs$Ninput_kgha_log) #2.296604
+
+me_parrot_energy_sb_loglog_unscale<-
+  me_parrot_energy_sb_loglog%>%
+    mutate(Ninput_kgha_log = Ninput_kgha_log_c + 2.296604)
+
+
+#log-log plot, but changed axes to be on log scale:
+parrotfish_sb_plot<-
+marine_sb_energy_dat_cs %>%
+  ggplot(aes(x = Ninput_kgha_log, y = log_parrot_energy)) +
+     geom_point(pch = 21, size = 2, colour = "#1F78B4", fill = "#1F78B4", alpha = .8) + #, size = .8
+    geom_line(data = me_parrot_energy_sb_loglog_unscale, aes(y = estimate__), lwd = 1.2, colour = "#1F78B4") +
+        geom_ribbon(data = me_parrot_energy_sb_loglog_unscale, aes(y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "#1F78B4")+
+  ylab(expression(Parrotfish~energy~flow~(MJ~m^-2~yr^-1)))+
+     scale_y_continuous(labels = c(0,  1, 3,  6), breaks = c(log(1), log(2), log(4), log(7)))+ #because of +1 in log-transformation, here log(1) = 0*** this is different than root npp - didn't need to +1 to log trasnformation, so that is fine as is* here, always substract 1 from label***
+ # scale_y_continuous(labels = c(exp(0),exp(1),exp(2),exp(3),exp(4)), breaks = c(0,1,2,3,4))+
+   # ylab(expression(atop("Parrotfish energy", paste(requirements~(log~MJ~m^-2~year^-1)))))+  
+    xlab(expression(Seabird~N~input~(kg~ha^-1~yr^-1)))+
+       scale_x_continuous(labels = c(0,  10, 100, 400), breaks = c(log(1), log(11), log(101), log(401)))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+             text = element_text(size = 14),
+        legend.position='none')
+
+parrotfish_sb_plot
+
+
+```
+
+
+
+####CORALS-----
+```{r}
+#limit to data with corals:
+coral_sb_dat_site<-
+  marine_sb_pp_dat%>%
+  filter(!is.na(coral_net_PP_MJ_m2_yr))
+
+coral_sb_dat_site
+
+#try centering and scaling predictor, can't log response because net goes below 0----
+range(coral_sb_dat_site$coral_net_PP_MJ_m2_yr)
+
+coral_sb_dat_sitecs<-
+    coral_sb_dat_site%>%
+  ungroup()%>%
+  mutate(
+         Ninput_kgha_cs = base::scale(Ninput_kgha, center = TRUE, scale = TRUE),
+         Ninput_kgha_c = base::scale(Ninput_kgha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha = log(Ninput_kgha),
+         log_Ninput_kgha_c = base::scale(log_Ninput_kgha, center = TRUE, scale = FALSE),
+)
+coral_sb_dat_sitecs
+
+
+#model:
+coral_sb_mod_group_log<-readRDS("brms/coral_sb_mod_group_log.RDS") 
+coral_sb_mod_group_log
+
+```
+
+
+
+##extract estimates, clean up final coral plots-----
+```{r}
+
+#hypothesis test
+hypothesis(coral_sb_mod_group_log, "log_Ninput_kgha_c>0") #Inf	1	*
+
+#extract effects----
+coral_sb_mod_group_log %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(b_log_Ninput_kgha_c)
+#effect         lower        upper   width  point  interval
+#0.3180287	0.203532	0.4343309		0.95	median	hdi
+
+#needs to back-transform - only x is log-transformed So: a doubling of X is associated with a change in the mean of Y of log(2^β1) units. If (LB,UB)is a confidence interval for β1, (log(2^LB), log(2^UB)) is a confidence interval for log(2^β1). If you had multiplied X by 10 instead of 2, you’d report that a 10-fold increase in X is associated with a change in the mean of Y by log(10^β1) .
+
+
+coral_sb_mod_group_log %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(log(2^b_log_Ninput_kgha_c))
+#0.2204407	0.1410777	0.3010552		0.95	median	hdi
+
+#for each doubling in N input, mean coral productivity increases by 0.22 mj/m2/year (95% CI = 0.14 - 0.30).
+
+coral_sb_mod_group_log %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(log(10^b_log_Ninput_kgha_c))
+#0.7322881	0.4686499	1.000084		0.95	median	hdi
+
+#for each 10-fold increase in N input, mean coral productivity increases by 0.73 mj/m2/year (95% CI = 0.47 - 1.00).
+
+##check sample sizes:
+coral_sb_dat_sitecs%>%
+  group_by(Island)%>%
+  summarize(length(coral_net_PP_MJ_m2_yr))
+#n = 6 islands
+#n = 24	 transects
+
+
+##plot by atoll-----
+
+#first get overall effect line:
+me_coral_sb_pp_log<-conditional_effects(coral_sb_mod_group_log, prob = .75, effects = 'log_Ninput_kgha_c', plot = FALSE)[[1]]
+mean(coral_sb_dat_sitecs$log_Ninput_kgha) #0.1950983
+
+me_coral_sb_pp_loguncenter<-
+  me_coral_sb_pp_log%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+0.1950983)
+
+#now get atoll-specific lines:
+me_coral_sb_pp_log_atoll<-conditional_effects(coral_sb_mod_group_log, prob = .75, effects = 'log_Ninput_kgha_c', re_formula=NULL, 
+                    conditions = make_conditions(coral_sb_dat_sitecs, vars = c("Atoll")), plot = FALSE)[[1]]
+
+mean(coral_sb_dat_sitecs$log_Ninput_kgha) #0.1950983
+
+me_coral_sb_pp_log_atolluncenter<-
+  me_coral_sb_pp_log_atoll%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+0.1950983)
+
+##truncated lines for each atoll-----
+coral_sb_dat_sitecs %>%
+   filter(Atoll == "Great Chagos Bank")%>%
+  summarize(range(log_Ninput_kgha)) #-3.101003		5.901787	
+
+coral_sb_dat_sitecs %>%
+   filter(Atoll == "Salomon")%>%
+  summarize(range(log_Ninput_kgha)) #-3.0681970				0.5636471	
+
+coral_sb_dat_sitecs %>%
+   filter(Atoll == "Peros Banhos")%>%
+  summarize(range(log_Ninput_kgha)) #-4.358177				5.232531		
+
+me_coral_sb_pp_log_gcb<-
+  me_coral_sb_pp_log_atolluncenter%>%
+  filter(Atoll == "Great Chagos Bank")%>%
+  filter(ninput_unscale>=-3.101003 & ninput_unscale<=5.901787)
+
+me_coral_sb_pp_log_sal<-
+  me_coral_sb_pp_log_atolluncenter%>%
+  filter(Atoll == "Salomon")%>%
+  filter(ninput_unscale>=-3.0681970 & ninput_unscale<=0.5636471)
+
+me_coral_sb_pp_log_pb<-
+  me_coral_sb_pp_log_atolluncenter%>%
+  filter(Atoll == "Peros Banhos")%>%
+  filter(ninput_unscale>=-4.358177 & ninput_unscale<=5.232531)
+
+
+#brewer.pal(12, "Set3")
+#display.brewer.pal(12, "Set3")
+#display.brewer.pal(5, "Reds")
+#brewer.pal(5,"Reds")
+
+##create plot, log-labels for seabird n input: 
+coral_sb_plot<-
+coral_sb_dat_sitecs %>%
+  mutate(Atoll = fct_relevel(Atoll, c("Great Chagos Bank", "Peros Banhos", "Salomon")))%>%
+  ggplot(aes(x = log_Ninput_kgha, y = coral_net_PP_MJ_m2_yr)) +
+    geom_line(data = me_coral_sb_pp_log_gcb, aes(x = ninput_unscale, y = estimate__,  color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+      geom_line(data = me_coral_sb_pp_log_pb, aes(x = ninput_unscale, y = estimate__,  color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+         geom_line(data = me_coral_sb_pp_log_sal, aes(x = ninput_unscale, y = estimate__, color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+   geom_line(data = me_coral_sb_pp_loguncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2,  colour = "#FCBBA1") +
+        geom_ribbon(data = me_coral_sb_pp_loguncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), 
+                    alpha = .2, lwd = 0,  colour = "#FCBBA1", fill = "#FCBBA1")+
+       geom_point(aes(shape = Atoll,  fill = Atoll, color = Atoll),size = 2, alpha = .8) + #, size = .8
+    ylab(expression(Coral~productivity~(MJ~m^-2~yr^-1)))+
+    #scale_x_continuous(labels = c(0, 1,  10, 100, 400), breaks = c(log(1), log(10), log(100), log(400)))+
+   #scale_x_continuous(labels = c(exp(-2.5), exp(0),exp(2.5),exp(5)), breaks = c(-2.5, 0, 2.5, 5))+
+   scale_x_continuous(labels = c(0.1, 1, 10, 100), breaks = c(log(0.1), 0, log(10), log(100)))+
+      #fine as is because didn't have to add 1 for log transformation*
+    xlab(expression(Seabird~N~input~(kg~ha^-1~yr^-1)))+
+  scale_shape_manual(values = c(21, 22, 23))+
+   # scale_fill_brewer(palette = "Reds")+
+   #   scale_colour_brewer(palette = "Reds")+
+  scale_fill_manual(values =c("#FB6A4A", "#DE2D26", "#A50F15"))+
+  scale_color_manual(values = c("#FB6A4A", "#DE2D26", "#A50F15"))+
+  theme_bw()+
+  #guides(lty = "none")+ #fill = "none"
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+             text = element_text(size = 14),
+        legend.position = c(0.8, 0.82),
+        legend.key.width=unit(0,"cm"),
+        legend.background = element_blank(),
+         legend.box.background = element_rect()
+)
+
+coral_sb_plot
+
+```
+
+
+
+##-----------COMBINE PLOTS-------------
+```{r}
+
+
+rootnpp_vs_forest_soiln15_plot_log_axis
+coral_sb_plot
+parrotfish_sb_plot
+
+Fig2<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axis, coral_sb_plot, parrotfish_sb_plot, labels = "auto", label_fontface = "bold", nrow = 1)
+Fig2
+
+#originally did width = 20, height = 7, but too small. see below for updates:
+
+##vertical:
+Fig2_vert<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axis, coral_sb_plot, parrotfish_sb_plot, labels = "auto", label_fontface = "bold", ncol = 1)
+Fig2_vert
+
+#originally did width = 7, height = 16, but too small. see below for updates:
+
+```
+
+
+#re-saving to increase size for A4 paper:
+```{r}
+###make font sizes much smaller:
+##create plot, log-labels for seabird n input: 
+coral_sb_plota4<-
+coral_sb_dat_sitecs %>%
+  mutate(Atoll = fct_relevel(Atoll, c("Great Chagos Bank", "Peros Banhos", "Salomon")))%>%
+  ggplot(aes(x = log_Ninput_kgha, y = coral_net_PP_MJ_m2_yr)) +
+    geom_line(data = me_coral_sb_pp_log_gcb, aes(x = ninput_unscale, y = estimate__,  color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+      geom_line(data = me_coral_sb_pp_log_pb, aes(x = ninput_unscale, y = estimate__,  color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+         geom_line(data = me_coral_sb_pp_log_sal, aes(x = ninput_unscale, y = estimate__, color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+   geom_line(data = me_coral_sb_pp_loguncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2,  colour = "#FCBBA1") +
+        geom_ribbon(data = me_coral_sb_pp_loguncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), 
+                    alpha = .2, lwd = 0,  colour = "#FCBBA1", fill = "#FCBBA1")+
+       geom_point(aes(shape = Atoll,  fill = Atoll, color = Atoll),size = 2, alpha = .8) + #, size = .8
+    ylab(expression(Coral~productivity~(MJ~m^-2~yr^-1)))+
+   scale_x_continuous(labels = c(0.1, 1, 10, 100), breaks = c(log(0.1), 0, log(10), log(100)))+
+    xlab(expression(Seabird~N~input~(kg~ha^-1~yr^-1)))+
+  scale_shape_manual(values = c(21, 22, 23))+
+  scale_fill_manual(values =c("#FB6A4A", "#DE2D26", "#A50F15"))+
+  scale_color_manual(values = c("#FB6A4A", "#DE2D26", "#A50F15"))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+             text = element_text(size = 10),
+        legend.position = c(0.79, 0.85),
+               legend.key.width=unit(0,"cm"),
+        legend.key.spacing.y = unit(-6, "pt"),
+         legend.key.spacing.x = unit(0, "pt"),
+       legend.text = element_text(size = 6, margin = margin(l=0, b = 0)),
+      legend.title = element_text(size = 6, margin = margin(b=-1)),
+      legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt"),
+        legend.background = element_blank(),
+         #legend.box.background = element_rect(),
+      legend.box.background = element_blank())
+
+
+coral_sb_plota4
+
+me_npp_int_log_tet_soil_unscale3<-
+  me_npp_int_log_tet_soil_unscale2%>%
+  mutate(Soil_fact = fct_relevel(Soil_fact, "low", "mid", "high"))
+
+rootnpp_vs_forest_soiln15_plot_log_axisa4<-
+tet_root_dat %>%
+  ggplot(aes(x = NativeForestFraction, y = log(NPP_MJ_m2_year))) +
+     geom_ribbon(data = me_npp_int_log_tet_soil_unscale3, aes(x = NativeForestFraction, y = estimate__, ymin = lower__, ymax = upper__, fill = Soil_fact), lwd = 0, alpha = .2) +
+geom_line(data = me_npp_int_log_tet_soil_unscale3, aes(x = NativeForestFraction, y = estimate__, colour = Soil_fact), lwd = 1.2) +
+    scale_colour_brewer(direction = 1, palette = "Greens", name ="")+#"YlOrRd"
+  scale_fill_brewer(direction = 1,  palette = "Greens", name = "")+#"YlOrRd"
+        guides(color = guide_legend(direction = "horizontal",  barwidth = .8,   
+    barheight = .1, override.aes = list(lwd = .4), order = 0)) +
+    #    guides(fill = guide_legend(direction = "horizontal")) +
+    new_scale_fill()+
+       geom_point(aes(fill =  SoilN15), pch = 21, size = 2, alpha = .9) +
+       scale_fill_distiller(direction = 1,  palette = "Greens")+ 
+      guides(fill = guide_colorbar(direction = "horizontal",  barwidth = 6,   
+    barheight = .2, order = 1, title.position = "top" )) +
+      labs(fill = expression(Soil~delta^15~N))+
+    xlab("Native vegetation cover (%)")+
+    ylab(expression(Fine~root~productivity~(MJ~m^-2~yr^-1)))+
+   scale_y_continuous(labels = c(1, 2.5, 5, 10, 20, 50), breaks = c(log(1),log(2.5), log(5),log(10), log(20), log(50)))+
+  theme_bw()+
+      theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+             text = element_text(size = 10),
+        legend.position=c(.35, .9),
+        legend.box = "vertical",
+        legend.direction="horizontal",
+               legend.key.width=unit(0.5,"cm"),
+        legend.key.spacing.y = unit(-6, "pt"),
+      #   legend.key.spacing.x = unit(-6, "pt"),
+        legend.spacing = unit(-6, "pt"),
+       legend.text = element_text(size = 6, margin = margin(l=0, b = 0)),
+      legend.title = element_text(size = 6), #, margin = margin(b=.5)
+      legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt"),
+        legend.background = element_blank(),
+         #legend.box.background = element_rect(),
+      legend.box.background = element_blank())
+rootnpp_vs_forest_soiln15_plot_log_axisa4
+
+
+parrotfish_sb_plota4<-
+marine_sb_energy_dat_cs %>%
+  ggplot(aes(x = Ninput_kgha_log, y = log_parrot_energy)) +
+     geom_point(pch = 21, size = 2, colour = "#1F78B4", fill = "#1F78B4", alpha = .8) + #, size = .8
+    geom_line(data = me_parrot_energy_sb_loglog_unscale, aes(y = estimate__), lwd = 1.2, colour = "#1F78B4") +
+        geom_ribbon(data = me_parrot_energy_sb_loglog_unscale, aes(y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "#1F78B4")+
+  ylab(expression(Parrotfish~energy~flow~(MJ~m^-2~yr^-1)))+
+     scale_y_continuous(labels = c(0,  1, 3,  6), breaks = c(log(1), log(2), log(4), log(7)))+ 
+    xlab(expression(Seabird~N~input~(kg~ha^-1~yr^-1)))+
+       scale_x_continuous(labels = c(0,  10, 100, 400), breaks = c(log(1), log(11), log(101), log(401)))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+             text = element_text(size = 10),
+        legend.position='none')
+
+parrotfish_sb_plota4
+
+
+
+###combine and save----
+Fig2_a4<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "auto", label_fontface = "bold", nrow = 1, label_size = 12)
+
+
+#ggsave(Fig2_a4, filename = "../figures/Fig2_A4.jpg", width = 8.2, height = 3, units = "in")
+
+
+Fig2_a4_vert<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "auto", label_fontface = "bold", ncol = 1, label_size = 12,
+                        hjust = -3.5, vjust = c(1.5, 1.5, 0))
+
+
+
+#ggsave(Fig2_a4_vert, filename = "../figures/Fig2_A4_vert.jpg", width = 3.5, height = 8)
+
+
+```
+

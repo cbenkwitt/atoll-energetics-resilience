@@ -1,0 +1,329 @@
+---
+title: "seabirds-soil-n15"
+author: "CEB"
+date: '2024-09-30'
+output: html_document
+---
+
+#should really establish that seabirds and soil n15 are related to each other:
+
+
+#load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+#for extracting effects:
+library(emmeans)
+
+```
+
+
+##load data
+```{r}
+soil_dat<-read.csv("../data/Fig2_Soil_Oct.csv")
+
+#seabird data
+sb_dat_by_isl<-read.csv("../data/Fig1_seabirds_by_island.csv") #
+
+#site data (to get region and atoll)
+site_dat<-read.csv("../data/Energetics_islands_Oct.csv")
+
+```
+
+
+#combine data
+```{r}
+#combine with site (island) data
+site_dat_r<-
+  site_dat%>%
+  select(c("Region", "Atoll", "Island"))
+
+soil_dat_for_sb2<-
+  left_join(soil_dat, site_dat_r) #combine with metadata on atoll and region
+soil_dat_for_sb2
+
+soil_sb_dat<-
+  left_join(select(soil_dat_for_sb2, c("Plot", "Region", "Atoll", "Island", "Site.Name", "Corner", "X15N.unacidified")),
+                   sb_dat_by_isl)%>%
+  mutate(X15N.unacidified = as.numeric(X15N.unacidified))%>%
+  rename("N15.acidified" = X15N.unacidified)%>%
+  mutate(Atoll_or_Island = case_when(Region == "Seychelles" ~ Island,
+                                     Region == "Tetiaroa" ~ Region,
+                                     Region == "Chagos" ~ Atoll))%>%
+    relocate(Region, Atoll_or_Island, .after = Plot)
+
+
+soil_sb_dat
+#n = 135
+#remove missing data for n15:
+soil_sb_dat%>%
+  filter(!is.na(N15.acidified))
+#n = 133
+
+#check sample sizes:
+soil_sb_dat%>%
+  filter(!is.na(N15.acidified))%>%
+  group_by(Region, Island)%>%
+  summarize(count_plots = length(N15.acidified))
+#n = 21 islands
+#n = 5-15 cores per island, with 9-14 in all of seychelles (multiple plots), and 10 in Tiaraunu. All else = 5
+```
+
+
+#a few quick plots:
+```{r}
+soil_sb_dat%>%
+  ggplot(aes(x = Ninput_kgha, y = N15.acidified))+
+  geom_point(aes(color = Region))
+
+soil_sb_dat%>%
+  ggplot(aes(x = log(Ninput_kgha+1), y = log(N15.acidified+1)))+
+  geom_point(aes(color = Region))
+
+soil_sb_dat%>%
+  ggplot(aes(x = Ninput_kgha, y = log(N15.acidified+1)))+
+  geom_point(aes(color = Region))
+
+soil_sb_dat%>%
+  ggplot(aes(x = log(Ninput_kgha+1), y = log(N15.acidified)))+
+  geom_point(aes(color = Region))
+```
+
+
+##run model for seabird nitrogen input versus soil n15
+```{r}
+#from plots above, looks like n-input may need to be logged....
+#can't log n15 because goes below 0
+range(soil_sb_dat$N15.acidified, na.rm = TRUE)
+range(soil_sb_dat$Ninput_kgha, na.rm = TRUE)
+
+#center data:
+soil_sb_dat_cs<-
+    soil_sb_dat%>%
+  ungroup()%>%
+  mutate(log_Ninput_kgha = log(Ninput_kgha+1), 
+         Ninput_kgha_c = base::scale(Ninput_kgha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha_c = base::scale(log_Ninput_kgha, center = TRUE, scale = FALSE),
+         #need to re-scale seabird energy because huge: 
+         SeabirdEnergyRequirements_KJha = SeabirdEnergyRequirements_MJha/1000,
+         log_SeabirdEnergyRequirements_KJha = log(SeabirdEnergyRequirements_KJha + 1),
+         SeabirdEnergyRequirements_KJha_c = base::scale(SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE),
+         log_SeabirdEnergyRequirements_KJha_c = base::scale(log_SeabirdEnergyRequirements_KJha, center = TRUE, scale = FALSE)
+         )%>%
+  filter(!is.na(N15.acidified))
+soil_sb_dat_cs
+
+#Soil n15 versus seabird N input centered model:----
+n15_ninput_mod_1_r<-
+  brm(
+ N15.acidified~Ninput_kgha_c + (1|Region) + (1|Region:Atoll_or_Island),
+  data = soil_sb_dat_cs, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/n15_ninput_mod_1_r") 
+print(n15_ninput_mod_1_r)
+pp_check(n15_ninput_mod_1_r) #looks okay, but a bit of 2 peaks that aren't being captured by model sampling
+plot(n15_ninput_mod_1_r) #looks good
+
+#Soil n15 versus seabird N input centered and log(N input) model:----
+n15_ninput_mod_log1_r<-
+  brm(
+ N15.acidified~log_Ninput_kgha_c + (1|Region) + (1|Region:Atoll_or_Island),
+  data = soil_sb_dat_cs, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/n15_ninput_mod_log1_r") 
+print(n15_ninput_mod_log1_r)
+pp_check(n15_ninput_mod_log1_r) #looks okay, but still a bit of 2 peaks that aren't being captured by model sampling
+plot(n15_ninput_mod_log1_r) #looks good
+
+
+
+#hypothesis tests-----
+hypothesis(n15_ninput_mod_1_r, c("Ninput_kgha_c>0"))
+hypothesis(n15_ninput_mod_log1_r, c("log_Ninput_kgha_c>0"))
+##all posterior probabilities = 1
+
+#extract effects------
+n15_ninput_mod_1_r %>%
+  spread_draws(b_Ninput_kgha_c) %>%
+  median_hdi(b_Ninput_kgha_c)
+#0.04237236	0.03295847	0.05152243	0.95	median	
+##for each one kg/ha increase in seabird nitrogen input, soil n15 increases by 0.04.
+##for each ten kg/ha increase in seabird nitrogen input, soil n15 increases by 0.42.
+##for each 100 kg/ha increase in seabird nitrogen input, soil n15 increases by 4.24.
+
+
+#log:
+n15_ninput_mod_log1_r %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(log(2^b_log_Ninput_kgha_c))
+#1.470245	1.246798	1.701765	0.95	median	hdi
+#each doubling of N input is associated with a change in mean soil N15 of 1.47 units. 
+
+n15_ninput_mod_log1_r %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(log(10^b_log_Ninput_kgha_c))
+#4.884047	4.141772	5.65314		0.95	median	hdi
+#each 10-fold increase of N input is associated with a change in mean soil N15 of 4.88 units. 
+
+#raw:
+n15_ninput_mod_log1_r %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(b_log_Ninput_kgha_c)
+#2.121114	1.798749	2.455127	0.95	median	hdi
+
+```
+
+
+
+##model plots----
+```{r}
+#n15 by n input, not log:----
+me_n15_ninput<-conditional_effects(n15_ninput_mod_1_r, prob = .75, effects = 'Ninput_kgha_c', plot = FALSE)[[1]]
+mean(soil_sb_dat_cs$Ninput_kgha) #53.49371
+
+me_n15_ninput_uncenter<-
+  me_n15_ninput%>%
+  mutate(ninput_unscale = Ninput_kgha_c+53.49371)
+
+soil_sb_dat_cs %>%
+  ggplot(aes(x = Ninput_kgha, y = N15.acidified)) +
+     geom_point() + #, size = .8
+    geom_line(data = me_n15_ninput_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2, colour = "#009E73") +
+        geom_ribbon(data = me_n15_ninput_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "gray")+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+    #            text = element_text(size = 24),
+        legend.position='none')
+#looks pretty bad 
+
+##log plot n15 by n input, -----
+me_n15_ninput_log<-conditional_effects(n15_ninput_mod_log1_r, prob = .75, effects = 'log_Ninput_kgha_c', plot = FALSE)[[1]]
+mean(soil_sb_dat_cs$log_Ninput_kgha) #2.347819
+
+me_n15_ninput_log_uncenter<-
+  me_n15_ninput_log%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+2.347819)
+
+soil_sb_dat_cs %>%
+  ggplot(aes(x = log_Ninput_kgha, y = N15.acidified)) +
+     geom_point() + #, size = .8
+    geom_line(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2, colour = "#009E73") +
+        geom_ribbon(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "gray")+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+    #            text = element_text(size = 24),
+        legend.position='none')
+#looks MUCH BETTER
+```
+
+
+#make plot prettier:
+```{r}
+library(PNWColors)
+#pal=pnw_palette("Shuksan2",4)
+
+##log plot n15 by n input, -----
+me_n15_ninput_log<-conditional_effects(n15_ninput_mod_log1_r, prob = .75, effects = 'log_Ninput_kgha_c', plot = FALSE)[[1]]
+mean(soil_sb_dat_cs$log_Ninput_kgha) #2.551764
+
+me_n15_ninput_log_uncenter<-
+  me_n15_ninput_log%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+2.551764)
+
+soil_sb_dat_cs %>%
+  ggplot(aes(x = log_Ninput_kgha, y = N15.acidified)) +
+     geom_point(aes(color = Region, fill = Region), alpha = .8) + #, size = .8
+    scale_color_manual(values=pnw_palette("Starfish", 3))  +
+  scale_fill_manual(values=pnw_palette("Starfish", 3))  +
+    geom_line(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2, colour = "black") +
+        geom_ribbon(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "gray")+
+  xlab("Seabird nitrogen input (log kg/ha)")+
+   ylab("Soil N15")+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank())
+```
+
+
+#check sample sizes:
+```{r}
+soil_sb_dat_cs%>%
+  group_by(Region, Island)%>%
+  summarize(count_soil = length(N15.acidified))
+#n = 5- 14 plots per island**
+#21 islands
+#133 total samples
+
+```
+
+
+##make plot match others:
+```{r}
+
+##log plot n15 by n input, -----
+me_n15_ninput_log<-conditional_effects(n15_ninput_mod_log1_r, prob = .75, effects = 'log_Ninput_kgha_c', plot = FALSE)[[1]]
+mean(soil_sb_dat_cs$log_Ninput_kgha) #2.347819
+
+me_n15_ninput_log_uncenter<-
+  me_n15_ninput_log%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+2.347819)
+
+soil_n15_sb_plot<-
+soil_sb_dat_cs %>%
+  ggplot(aes(x = log_Ninput_kgha, y = N15.acidified)) +
+     geom_point(aes(color = Region, fill = Region), alpha = .8) + #, size = .8
+    scale_color_manual(values=pnw_palette("Starfish", 3))  +
+  scale_fill_manual(values=pnw_palette("Starfish", 3))  +
+    geom_line(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2, colour = "black") +
+        geom_ribbon(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "gray")+
+  xlab("Seabird nitrogen input (log kg/ha)")+
+      xlab(expression(Seabird~N~input~(kg~ha^-1)))+  
+    scale_x_continuous(labels = c(0, 1, 10, 100, 1000), breaks = c(log(1), log(2), log(11), log(101), log(1001)))+
+  # ylab("Soil N15")+
+  ylab(expression(Soil~delta^15~N))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank())
+
+soil_n15_sb_plot
+
+
+soil_n15_sb_plot_no_region<-
+soil_sb_dat_cs %>%
+  ggplot(aes(x = log_Ninput_kgha, y = N15.acidified)) +
+     geom_point(alpha = .8, color = "#A6611A") + #, size = .8
+  #  scale_color_manual(values=pnw_palette("Starfish", 3))  +
+ # scale_fill_manual(values=pnw_palette("Starfish", 3))  +
+    geom_line(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2, colour = "#A6611A") +
+        geom_ribbon(data = me_n15_ninput_log_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "#A6611A")+
+  xlab("Seabird nitrogen input (log kg/ha)")+
+      xlab(expression(Seabird~N~input~(kg~ha^-1)))+  
+    scale_x_continuous(labels = c(0, 1, 10, 100, 1000), breaks = c(log(1), log(2), log(11), log(101), log(1001)))+
+  # ylab("Soil N15")+
+  ylab(expression(Soil~delta^15~N))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+                     text = element_text(size = 10))
+
+soil_n15_sb_plot_no_region
+
+#ggsave(filename = "../figures/Supp_Fig_Seabirds_SoilN15.jpg", width = 7, height = 7)
+
+
+
+```
+

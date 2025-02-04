@@ -1,0 +1,49 @@
+﻿Site.Name,Year,Month,Location,Transect,sediment_delivery_m3_m_yr,reef_accretion_2.0_mm_yr
+Ile de la Passe,2023,10,lagoon,1,0.269,5.718662766
+Ile de la Passe,2023,10,lagoon,2,0.093,9.316524927
+Ile de la Passe,2023,10,lagoon,3,0.099,14.26418177
+Ile de la Passe,2023,10,lagoon,4,0.107,14.13802374
+Ile Anglaise (SAL),2023,10,lagoon,1,0.191,5.164572826
+Ile Anglaise (SAL),2023,10,lagoon,2,0.016,8.395509322
+Ile Anglaise (SAL),2023,10,lagoon,3,0.156,4.900207289
+Ile Anglaise (SAL),2023,10,lagoon,4,0.084,7.380993259
+Grande Coquillage,2023,10,lagoon,1,0.182,6.037987606
+Grande Coquillage,2023,10,lagoon,2,0.278,9.31683904
+Grande Coquillage,2023,10,lagoon,3,0.216,2.987099817
+Grande Coquillage,2023,10,lagoon,4,0.065,0.530258246
+Ile Poule,2023,10,lagoon,1,0.204,0.505303757
+Ile Poule,2023,10,lagoon,2,0.291,2.499429622
+Ile Poule,2023,10,lagoon,3,0.346,3.832884529
+Ile Poule,2023,10,lagoon,4,0.081,2.46846574
+Middle Brother,2023,10,lagoon,1,0.182,3.513535019
+Middle Brother,2023,10,lagoon,2,0.106,4.746799948
+Middle Brother,2023,10,lagoon,3,0.42,2.643240817
+Middle Brother,2023,10,lagoon,4,0.248,1.238481917
+Eagle,2023,10,lagoon,1,0.004,1.822013852
+Eagle,2023,10,lagoon,2,0.025,1.031308749
+Eagle,2023,10,lagoon,3,0.007,2.390098981
+Eagle,2023,10,lagoon,4,0.036,2.463532386
+Ile de la Passe,2023,10,forereef shallow,1,0.227,3.62800861
+Ile de la Passe,2023,10,forereef shallow,2,0.085,2.211362257
+Ile de la Passe,2023,10,forereef shallow,3,0.055,6.281078246
+Ile de la Passe,2023,10,forereef shallow,4,0.142,7.955129282
+Ile Anglaise (SAL),2023,10,forereef shallow,1,0.026,3.373374819
+Ile Anglaise (SAL),2023,10,forereef shallow,2,0.274,1.54611346
+Ile Anglaise (SAL),2023,10,forereef shallow,3,,6.134864865
+Ile Anglaise (SAL),2023,10,forereef shallow,4,0.057,5.284733543
+Grande Coquillage,2023,10,forereef shallow,1,0.036,0.021580753
+Grande Coquillage,2023,10,forereef shallow,2,0.107,1.721961156
+Grande Coquillage,2023,10,forereef shallow,3,0.013,-0.283068283
+Grande Coquillage,2023,10,forereef shallow,4,0.003,0.090810964
+Ile Poule,2023,10,forereef shallow,1,0.023,0.423607177
+Ile Poule,2023,10,forereef shallow,2,0.01,1.718813113
+Ile Poule,2023,10,forereef shallow,3,0.385,0.586308766
+Ile Poule,2023,10,forereef shallow,4,0.075,1.394213665
+Middle Brother,2023,10,forereef shallow,1,0.26,1.005608349
+Middle Brother,2023,10,forereef shallow,2,0.063,4.905736995
+Middle Brother,2023,10,forereef shallow,3,0.135,2.997180844
+Middle Brother,2023,10,forereef shallow,4,0.058,6.988808829
+Eagle,2023,10,forereef shallow,1,0.09,1.740698455
+Eagle,2023,10,forereef shallow,2,0.002,1.42346866
+Eagle,2023,10,forereef shallow,3,0.003,0.922595727
+Eagle,2023,10,forereef shallow,4,0.003,1.384254952

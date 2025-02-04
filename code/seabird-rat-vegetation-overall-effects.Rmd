@@ -1,0 +1,204 @@
+---
+title: "Sb-rat-vegetation-overall-effects"
+author: "CEB"
+date: '2025-02-04'
+output: html_document
+---
+
+#set options
+```{r}
+options(scipen= 999) #because some of the excel files have sci notation in them
+
+```
+
+
+#load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+library(cowplot)
+
+```
+
+#load data 
+```{r}
+
+#seabird data
+sb_dat_by_isl<-read.csv("../data/Fig1_seabirds_by_island.csv") #this is summed per island
+
+#site data
+site_dat<-read.csv("../data/Energetics_islands_Oct.csv") 
+
+#vegetation data:
+veg_dat<-read.csv("../data/Fig1_habitat_cover_used_sites.csv") 
+
+
+```
+
+#combine data
+```{r}
+#combine:
+sb_site_dat<-
+  right_join(select(site_dat, c(Region, Atoll, Island, Rats)),sb_dat_by_isl,   by = "Island") %>%
+  ##add Atoll_or_island column for group-level effects:
+  mutate(Atoll_or_Island = case_when(Region == "Seychelles" ~ Island,
+                                     Region == "Tetiaroa" ~ Region,
+                                     Region == "Chagos" ~ Atoll))%>%
+  relocate(Atoll_or_Island, .after = Atoll)
+
+
+sb_site_dat
+#n = 28 islands
+
+sb_veg_site_dat<-
+    left_join(sb_site_dat,  veg_dat, by = "Island")
+
+sb_veg_site_dat
+
+```
+
+
+
+#run models vegetation and rat effects on seabird nitrogen input:-----
+```{r}
+sb_veg_site_dat_all<-
+  sb_veg_site_dat%>%
+  mutate(SeabirdEnergyRequirements_KJha = SeabirdEnergyRequirements_MJha/1000,
+         log_SeabirdEnergyRequirements_KJha = log(SeabirdEnergyRequirements_KJha+1),
+         log_Ninput_kgha = log(Ninput_kgha+1),
+         Rats = as.factor(Rats),
+         Rats_relevel = relevel(Rats, ref = "yes"),
+         Native_percent_c = base::scale(Native_percent, center = TRUE, scale = FALSE)
+         )
+
+###Seabird Nitrogen Input-------------
+#region and island/atoll:
+sb_rat_veg_region_atoll_mod1<-
+   brm(
+ log_Ninput_kgha~Rats_relevel*Native_percent_c + (1 | Region) + (1 | Region:Atoll_or_Island) ,
+  data = sb_veg_site_dat_all, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), # 1 divergent transition, okay
+   file = "brms/sb_rat_veg_region_atoll_mod1") 
+
+print(sb_rat_veg_region_atoll_mod1)
+pp_check(sb_rat_veg_region_atoll_mod1) #looks good
+plot(sb_rat_veg_region_atoll_mod1, ask = FALSE)
+
+hypothesis(sb_rat_veg_region_atoll_mod1, c("Rats_relevelno>0", #0.88
+                                     "Native_percent_c>0", #0.65
+                                    "Rats_relevelno:Native_percent_c>0")) #.93
+
+#really similar results regardless of including atoll/island (which may not be necessary here, because collected at island level. but also okay to leave in)
+
+plot(conditional_effects(sb_rat_veg_region_atoll_mod1, "Native_percent_c:Rats_relevel"))
+#yup, can see more positive effect of native forest on rat-free islands, and more positive effect of no rats at higher native vegetation. 
+
+```
+
+
+
+
+#because interactions, use emmeans to check effects:
+```{r}
+#but remember because because y log transformed, will need to exponentiate to back transform:
+
+#get interaction effect size (exponentiate):
+sb_rat_veg_region_atoll_mod1%>%
+  spread_draws(`b_Rats_relevelno:Native_percent_c`)%>%
+  median_hdi(exp(`b_Rats_relevelno:Native_percent_c`))
+#1.04411	0.9796219	1.105117	0.95	median	hdi
+
+#RAT EFFECTS------
+#compare rat effects at low versus high native vegetation:---
+range(sb_veg_site_dat_all$Native_percent_c) #-51.74536  44.73464
+mean(sb_veg_site_dat_all$Native_percent_c) #0
+range(sb_veg_site_dat_all$Native_percent) #3.52 100.00
+mean(sb_veg_site_dat_all$Native_percent) #55.26536
+
+#at ~3.52, 55, 100% native forest (min, mean, max), these are the effects of rats on seabird nitrogen input: ----
+sb_rat_veg_region_atoll_mod1%>%
+emmeans(~Rats_relevel*Native_percent_c, at = list(Native_percent_c = c(-51.74536, 0, 44.73464))) %>%
+  contrast(method = "revpairwise") #equivalent to:  #pairs()
+
+#relevant contrasts:
+#contrast                                                         estimate lower.HPD upper.HPD
+# (no Native_percent_c-51.74536) - (yes Native_percent_c-51.74536)   -1.065    -5.026      2.54
+#no Native_percent_c0 - yes Native_percent_c0                        1.197    -0.893      3.26
+# no Native_percent_c44.73464 - yes Native_percent_c44.73464          3.117    -0.175      6.51
+
+exp(-1.065)
+exp(1.197)
+exp(3.837)
+
+#look at 25, 50, 75, 100% native forest, since we use 75% cut-off later:
+#calculate centered value by subtracting mean:
+25-55.26536
+50-55.26536
+75-55.26536
+100-55.26536
+sb_rat_veg_region_atoll_mod1%>%
+emmeans(~Rats_relevel*Native_percent_c, at = list(Native_percent_c = c(-30.26536, -5.26536, 19.73464, 44.73464))) %>%
+  contrast(method = "revpairwise")
+#relevant contrasts:
+#contrast                                                                 estimate lower.HPD upper.HPD
+# 25%: (no Native_percent_c-30.26536) - (yes Native_percent_c-30.26536)   -0.132    -2.894      2.67
+#50%  (no Native_percent_c-5.26536) - (yes Native_percent_c-5.26536)      0.958    -1.106      3.11
+#75%   no Native_percent_c19.73464 - yes Native_percent_c19.73464         2.040    -0.331      4.34
+#100%  no Native_percent_c44.73464 - yes Native_percent_c44.73464          3.117    -0.175      6.51
+
+exp(-0.132) #0.876341
+exp(0.132) #1.141108
+exp(0.958) #2.606478
+exp(2.040) #7.690609
+exp(3.117) #22.57854
+exp(-0.175) #0.839457
+exp(6.51) #671.8264
+
+
+#NATIVE VEGETATION EFFECTS------
+sb_rat_veg_region_atoll_mod1%>%
+emtrends(pairwise ~ Rats_relevel, var = "Native_percent_c")%>%
+  contrast("trt.vs.ctrl")
+#Rats_relevel Native_percent_c.trend lower.HPD upper.HPD
+# yes                         0.00773  -0.03554    0.0514
+# no                          0.05088   0.00656    0.0935
+#(these are the slope estimates for effect of native vegetation on ratty versus non-ratty islands)
+
+# contrast estimate lower.HPD upper.HPD
+# yes - no  -0.0432    -0.104    0.0161
+#(this compares native vegetation effect on ratty versus rat-free islands. to do reverse comparison just switch sign)
+
+#so stronger effects of native vegetation on rat-free islands (slope = exp(0.05088)) compared to ratty islands (slope = exp(0.00773)). Estimated difference in slope on rat-free compared to ratty islands is exp(0.0432) = 1.04 times higher = 4.41% higher.
+
+
+exp(0.05088) #1.052197 = 5.22% increase in seabird nitrogen for each one unit increase in native vegetation on rat-free islands
+exp(0.00773) #1.00776 = 0.77% increase in seabird nitrogen for each one unit increase in native vegetation on ratty islands
+
+```
+
+
+
+#also look at raw seabird difference just for islands used in Fig 4 reef resilience:
+```{r}
+sb_veg_site_dat_fig4<-
+ sb_veg_site_dat_all%>%
+  filter(Island == "Ile de la Passe"|Island == "Ile Anglaise (SAL)"|
+           Island == "Grande Coquillage"|Island == "Ile Poule"|
+           Island == "Eagle"|Island == "Middle Brother")
+
+sb_veg_site_dat_fig4
+
+
+sb_veg_site_dat_fig4%>%
+  group_by(Rats)%>%
+  summarize(mean_dens = mean(Density_birdsha),
+            med_dens = median(Density_birdsha))
+
+```
+
+

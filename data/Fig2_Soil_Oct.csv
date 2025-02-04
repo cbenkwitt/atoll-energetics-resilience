@@ -1,0 +1,136 @@
+﻿Plot,Island,Site.Name,Corner,15N.unacidified,N.unacidified,N.acidified,13C.acidified,C.acidified
+CHG01,Ile de la Passe,Ile de la Passe,1,10.17,0.39,3.87,-28.11,44.76
+CHG01,Ile de la Passe,Ile de la Passe,2,9.55,0.35,4.41,-26.31,45.62
+CHG01,Ile de la Passe,Ile de la Passe,3,9.65,0.49,3.95,-27.85,43.23
+CHG01,Ile de la Passe,Ile de la Passe,4,11.42,0.95,3.3,-29.35,45.54
+CHG01,Ile de la Passe,Ile de la Passe,5,13.96,0.94,3.72,-28.64,44.61
+CHG02,Ile Anglaise (SAL),Ile Anglaise (SAL),1,4.49,1.69,2.35,-29.35,47
+CHG02,Ile Anglaise (SAL),Ile Anglaise (SAL),2,5.59,0.67,3.54,-27.45,45.35
+CHG02,Ile Anglaise (SAL),Ile Anglaise (SAL),3,7.62,0.77,3.36,-28.11,44.45
+CHG02,Ile Anglaise (SAL),Ile Anglaise (SAL),4,8.03,0.6,3.35,-27.4,44.73
+CHG02,Ile Anglaise (SAL),Ile Anglaise (SAL),5,6.95,0.77,2.6,-28.21,45.63
+CHG04,Ile Poule,Ile Poule,1,6.45,0.41,3.69,-28.29,44.92
+CHG04,Ile Poule,Ile Poule,2,5.91,0.45,2.96,-28.03,46.05
+CHG04,Ile Poule,Ile Poule,3,1.73,0.14,2.69,-28.2,46.82
+CHG04,Ile Poule,Ile Poule,4,3.88,0.06,3.22,-28.35,45.45
+CHG04,Ile Poule,Ile Poule,5,5.58,0.35,2.45,-28.8,46.01
+CHG05,Eagle,Eagle,1,1.96,0.46,3.19,-28.05,46.52
+CHG05,Eagle,Eagle,2,0.67,0.48,3.04,-28.2,46.12
+CHG05,Eagle,Eagle,3,1.57,0.25,3.03,-28.05,46.07
+CHG05,Eagle,Eagle,4,1.3,0.35,3.23,-27.92,45.77
+CHG05,Eagle,Eagle,5,1.38,0.37,3.27,-28.46,45.44
+CHG11,Grande Mapou,Grande Mapou,1,15.14,1.58,4.63,-26.34811338,47.92
+CHG11,Grande Mapou,Grande Mapou,2,15.12,2.77,3.99,-27.51562974,50.22
+CHG11,Grande Mapou,Grande Mapou,3,13.49,3.5,4.01,-27.42055704,52.75
+CHG11,Grande Mapou,Grande Mapou,4,14.89,1.64,4.93,-26.6457526,49.56
+CHG11,Grande Mapou,Grande Mapou,5,14.28,3.35,3.63,-27.90685831,52.58
+CHG12,Ile Fouquet,Ile Fouquet,1,7.75,0.29,4.62,-27.37097012,47.34
+CHG12,Ile Fouquet,Ile Fouquet,2,7.51,0.37,4.23,-27.69571803,46.94
+CHG12,Ile Fouquet,Ile Fouquet,3,6.28,0.33,3.63,-28.1511277,47.7
+CHG12,Ile Fouquet,Ile Fouquet,4,6.65,0.41,3.83,-28.04456692,46.54
+CHG12,Ile Fouquet,Ile Fouquet,5,6.85,0.33,2.89,-27.181219,38.28
+CHG13,Grande Coquillage,Grande Coquillage,1,14.67,1.12,6.34,-26.07559515,44.99
+CHG13,Grande Coquillage,Grande Coquillage,2,13.63,0.84,7.02,-25.1918933,47.33
+CHG13,Grande Coquillage,Grande Coquillage,3,13.44,0.63,5.99,-26.60546981,46.63
+CHG13,Grande Coquillage,Grande Coquillage,4,12.43,0.36,5.18,-25.93898166,43.67
+CHG13,Grande Coquillage,Grande Coquillage,5,13.25,0.32,6.27,-25.76922692,45.85
+CHG14,Yeye,Yeye,1,1.27,0.16,1.68,-28.15288662,37.31
+CHG14,Yeye,Yeye,2,5.32,0.18,3.15,-28.42058382,47.3
+CHG14,Yeye,Yeye,3,5,0.22,3.11,-28.67082836,45.9
+CHG14,Yeye,Yeye,4,4.05,0.38,2.77,-30.0973931,48.07
+CHG14,Yeye,Yeye,5,3.73,0.29,2.95,-29.5633435,47.74
+CHG15,Middle Brother,Middle Brother,1,14.03,0.3,6.41,-24.73360992,46.4
+CHG15,Middle Brother,Middle Brother,2,13.65,0.27,3.48,-22.70378839,32.23
+CHG15,Middle Brother,Middle Brother,3,14.39,0.28,5.82,-24.84285164,46.47
+CHG15,Middle Brother,Middle Brother,4,15.71,0.49,5.72,-27.24827004,47.02
+CHG15,Middle Brother,Middle Brother,5,15.28,0.41,6.25,-25.44963535,46.74
+SEY01,Fregate,Fregate H,1,Notenoughsample,Notenoughsample,0.66,-23.74,7.15
+SEY01,Fregate,Fregate H,2,16.02,2.18,1.96,-26.57,22.65
+SEY01,Fregate,Fregate H,3,16.15,1.23,1.24,-26.19,13.94
+SEY01,Fregate,Fregate H,4,16.17,1.2,1.09,-25.89,11.16
+SEY01,Fregate,Fregate H,5,14.78,1.16,1.41,-25.67,17.66
+SEY02,Fregate,Fregate M,1,13.88,0.63,1.16,-27.83,14.79
+SEY02,Fregate,Fregate M,2,15.36,0.92,1.89,-26.89,19
+SEY02,Fregate,Fregate M,3,14.77,1,1.76,-26.53,17.11
+SEY02,Fregate,Fregate M,4,14.69,0.69,1.61,-25.17,13.99
+SEY02,Fregate,Fregate M,5,14.2,0.9,1.79,-27.83,18.56
+SEY03,Fregate,Fregate L,1,15.01,0.72,1.31,-24.93,12.69
+SEY03,Fregate,Fregate L,2,13.54,0.72,0.88,-25.71,9.58
+SEY03,Fregate,Fregate L,3,13.34,1.04,1.62,-26.82,21.92
+SEY03,Fregate,Fregate L,4,15.76,0.86,0.56,-22.61,5.48
+SEY03,Fregate,Fregate L,5,14.37,0.72,0.92,-23.34,9.21
+SEY04,Aride,Aride South,1,16.92,0.6,1.51,-25.25,13.41
+SEY04,Aride,Aride South,2,18.62,0.59,0.72,-25.81,9.13
+SEY04,Aride,Aride South,3,18.2,0.9,0.87,-26.98,11.02
+SEY04,Aride,Aride South,4,18.35,1.2,1.43,-26.78,18.84
+SEY04,Aride,Aride South,5,18.09,1.14,0.64,-24.48,6.46
+SEY05,Cousine,Cousine South,1,19.01,3.49,Notenoughsample,Notenoughsample,Notenoughsample
+SEY05,Cousine,Cousine South,2,18.38,2.04,Notenoughsample,Notenoughsample,Notenoughsample
+SEY05,Cousine,Cousine South,3,19.26,3.91,Notenoughsample,Notenoughsample,Notenoughsample
+SEY05,Cousine,Cousine South,4,19.15,3.96,Notenoughsample,Notenoughsample,Notenoughsample
+SEY05,Cousine,Cousine South,5,19.55,3.91,Notenoughsample,Notenoughsample,Notenoughsample
+SEY06,Cousine,Cousine North,1,17.37,0.28,0.61,-25.2,5.77
+SEY06,Cousine,Cousine North,2,17.1,0.4,1.38,-25.06,15.32
+SEY06,Cousine,Cousine North,3,14.75,0.08,1.05,-25.75,11.57
+SEY06,Cousine,Cousine North,4,16.26,0.19,0.98,-21.7,11.1
+SEY06,Cousine,Cousine North,5,16.82,0.51,2.23,-26.08,24.39
+SEY07,Felicite,Felicite North,1,8.93,0.15,0.81,-22.75,7.05
+SEY07,Felicite,Felicite North,2,9.35,0.18,0.97,-23.52,8.68
+SEY07,Felicite,Felicite North,3,8.19,0.18,0.51,-27.33,5.44
+SEY07,Felicite,Felicite North,4,7.24,0.56,0.59,-27.52,7.46
+SEY07,Felicite,Felicite North,5,7.79,0.42,0.75,-25.78,7.74
+SEY08,Felicite,Felicite South,1,9.77,0.02,0.08,-24.86,0.66
+SEY08,Felicite,Felicite South,2,7.92,0.02,0.05,-24.97,0.48
+SEY08,Felicite,Felicite South,3,8.11,0.69,0.62,-26.96,7.02
+SEY08,Felicite,Felicite South,4,Notenoughsample,Notenoughsample,Notenoughsample,Notenoughsample,Notenoughsample
+SEY08,Felicite,Felicite South,5,8.73,0.35,0.3,-26.98,3.63
+SEY09,Aride,Aride West,1,16.84,0.27,2.25,-25.22,23.32
+SEY09,Aride,Aride West,2,17.44,1.15,1.35,-25.64,13.54
+SEY09,Aride,Aride West,3,17.72,0.52,0.53,-23.88,5.11
+SEY09,Aride,Aride West,4,17.56,0.91,2.66,-24.37,23.67
+SEY09,Aride,Aride West,5,17.69,0.76,0.73,-24.64,7.16
+TET01,Reiono,Reiono,1,16.53,2.42,Notenoughsample,Notenoughsample,Notenoughsample
+TET01,Reiono,Reiono,2,14,0.46,5.06,-25.38,44.96
+TET01,Reiono,Reiono,3,16.51,2.26,6.45,-26.38,47.97
+TET01,Reiono,Reiono,4,15.39,1.16,5.75,-27.63,46.76
+TET01,Reiono,Reiono,5,15.5,0.94,5.31,-26.54,46.81
+TET02,Tiaraunu,Tiaraunu Nord,1,5.1,0.98,3.61,-28.01,47.03
+TET02,Tiaraunu,Tiaraunu Nord,2,8.35,0.72,3.25,-28.32,47.16
+TET02,Tiaraunu,Tiaraunu Nord,3,14.49,0.57,5.81,-26.53,45.6
+TET02,Tiaraunu,Tiaraunu Nord,4,7.15,0.57,4.1,-26.93,45.97
+TET02,Tiaraunu,Tiaraunu Nord,5,13.1,0.36,5.69,-26.09,45.97
+TET03,Rimatuu,Rimatuu,1,2.25,0.31,4.45,-25.55,47.3
+TET03,Rimatuu,Rimatuu,2,3.61,0.11,1.39,-19.09,25.04
+TET03,Rimatuu,Rimatuu,3,8.59,0.19,3.71,-27.09,46.16
+TET03,Rimatuu,Rimatuu,4,5.81,0.21,4.09,-27.27,47.41
+TET03,Rimatuu,Rimatuu,5,4.09,0.37,4.33,-27.38,49.37
+TET04,Onetahi,Onetahi,1,1.19,0.79,2.91,-29.51,46.94
+TET04,Onetahi,Onetahi,2,0.61,0.66,2.77,-29.48,47.87
+TET04,Onetahi,Onetahi,3,-0.87,1.96,5.59,-26.65,44.24
+TET04,Onetahi,Onetahi,4,0.86,0.81,2.84,-29.85,47.45
+TET04,Onetahi,Onetahi,5,-0.18,1.56,2.65,-30.43,49.24
+TET05,Aie,Aie,1,15.89,1.45,4.52,-28.48,47.33
+TET05,Aie,Aie,2,15.6,0.41,4.48,-27.71,46.48
+TET05,Aie,Aie,3,15.9,1.24,4.85,-27.65,46.3
+TET05,Aie,Aie,4,16.24,2.13,4.62,-28.08,47.72
+TET05,Aie,Aie,5,15.42,0.91,4.83,-27.7,47.53
+TET06,Tiaraunu,Tiaraunu,1,1.19,1.4,2.53,-29.82,47.2
+TET06,Tiaraunu,Tiaraunu,2,2.03,1,2.64,-29.83,47.53
+TET06,Tiaraunu,Tiaraunu,3,2.71,1.43,2.74,-29.24,47.69
+TET06,Tiaraunu,Tiaraunu,4,3.53,0.77,3.07,-28.06,46.38
+TET06,Tiaraunu,Tiaraunu,5,2.7,1.18,2.98,-29.24,46.81
+TET08,Tauini,Tauini,1,9.19,1.03,4.57,-27.81,45.26
+TET08,Tauini,Tauini,2,12.47,1.17,5.16,-27.04,47.47
+TET08,Tauini,Tauini,3,9.09,2.15,3.36,-27.31,46.52
+TET08,Tauini,Tauini,4,11.37,0.76,4.53,-27.08,44.04
+TET08,Tauini,Tauini,5,11.01,1.2,4.81,-26.69,45.97
+TET09,Tahuna Iti,Tahuna Iti,1,18.7,3.03,5.95,-26.64,45.94
+TET09,Tahuna Iti,Tahuna Iti,2,16.26,0.99,5.98,-26.34,45.71
+TET09,Tahuna Iti,Tahuna Iti,3,18.05,0.52,6.05,-26.38,46.88
+TET09,Tahuna Iti,Tahuna Iti,4,19.37,2.86,5.84,-27.35,48.66
+TET09,Tahuna Iti,Tahuna Iti,5,18.91,0.44,6.49,-25.17,45.55
+TET10,Auroa,Auroa,1,9.34,0.83,4.44,-27.71,44.88
+TET10,Auroa,Auroa,2,9.16,0.79,4.06,-28.06,45.43
+TET10,Auroa,Auroa,3,11.34,0.56,4.28,-28.1,47.52
+TET10,Auroa,Auroa,4,9.66,0.64,4.1,-27.51,45.4
+TET10,Auroa,Auroa,5,9.63,0.84,4,-27.48,44.6
