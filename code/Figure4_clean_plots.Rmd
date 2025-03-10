@@ -1,0 +1,303 @@
+---
+title: "Figure4_clean_plots"
+author: "CEB"
+date: '2025-03-05'
+output: html_document
+---
+
+##load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+#for interpreting interactions:
+library(emmeans)
+
+#for plots:
+library(ggnewscale)
+library(RColorBrewer)
+
+
+#for combining plot:
+library(cowplot)
+```
+
+
+
+##reef accretion and sediment delivery data and models-----
+```{r}
+#load data:
+reef_res_dat<-read.csv("../data/Fig4_reef_related_resilience.csv")
+
+isl_dat<-read.csv("../data/Energetics_islands_Oct.csv")%>%
+   mutate(Site.Name = Island)
+
+#combine data:
+reef_res_site_dat<-
+  right_join(select(isl_dat, c(Region, Atoll, Island, Site.Name, Rats)), reef_res_dat, by = "Site.Name")
+
+reef_res_site_dat
+#n = 48
+
+#log sediment delivery:
+reef_res_site_dat2<-
+  reef_res_site_dat%>%
+  mutate(log_sed_delivery = log(sediment_delivery_m3_m_yr))
+  
+
+#load models:
+reef_sed_rat_mod_group_log2<-readRDS("brms/reef_sed_rat_mod_group_log2.RDS") 
+reef_accr_rat_mod_group2<-readRDS("brms/reef_accr_rat_mod_group2.RDS")
+
+
+```
+
+
+
+##root length data and model-----
+```{r}
+#load data:
+root_dat<-read.csv("../data/RootData4Casey_241125.csv")
+root_dat
+
+#add region column:
+root_dat<-
+  root_dat%>%
+  mutate(Region = case_when(grepl("SEY", Plot)~ "Seychelles",
+                             TRUE~ "Tetiaroa"))%>%
+  relocate(Region, .before = Motu)
+root_dat
+
+#remove outlier:
+root_dat_no_out<-
+  root_dat%>%
+  filter(!(Motu == "Iti"&RootCore == 1))
+
+#restrict to Tetiaroa:
+root_dat_no_out_Tet<-
+root_dat_no_out%>%
+  filter(Region == "Tetiaroa")
+
+
+root_length_forest_cat_mod_log_no_out<-readRDS("brms/root_length_forest_cat_mod_log_no_out.RDS")
+
+```
+
+###plot reef accretion potential-----
+```{r}
+##RAP (accretion), re-level: 
+reef_res_site_dat_refact<-
+  reef_res_site_dat%>%
+ mutate(Location = as.factor(Location),
+         Rats = as.factor(Rats),
+         Rats = fct_relevel(Rats, "yes", "no"),
+         Location = fct_relevel(Location, "lagoon", "forereef shallow"))
+
+
+#now split:----
+reef_res_site_dat_refact_lagoon<-
+  reef_res_site_dat_refact%>%
+  filter(Location == "lagoon")
+
+reef_res_site_dat_refact_forereef<-
+  reef_res_site_dat_refact%>%
+  filter(Location == "forereef shallow")
+
+
+#lagoon:----
+reef_accr_rat_mod_group2 %>% 
+  epred_draws(newdata = expand_grid(Location = c("lagoon", "forereef shallow"),
+                                    Rats = c("yes", "no")), 
+                  re_formula=NA)%>%
+  mutate(Location = as.factor(Location),
+         Rats = as.factor(Rats),
+         Rats = fct_relevel(Rats, "yes", "no"),
+         Location = fct_relevel(Location, "lagoon", "forereef shallow"))%>%
+  filter(Location == "lagoon")%>%
+  ggplot(aes(x = Rats, y = .epred, fill = Rats)) +
+   geom_hline(yintercept = 0, linetype = "dotted") +
+      geom_hline(yintercept = 5, lwd = .7, alpha = .5) +
+    geom_hline(yintercept = 6, lwd = .7, alpha = .7) +
+stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidth = 1,
+          side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
+  ylab(expression(RAPmax~(mm~yr^-1)))+
+  scale_fill_manual(values = c("#993333", "#CB9898"))+
+          geom_point(data = reef_res_site_dat_refact_lagoon, aes(x = Rats, y = reef_accretion_2.0_mm_yr), 
+                 size = .8, alpha = .5, pch = 16, position=position_jitter(height = 0, width = 0.05))+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+        panel.border = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 10),
+        axis.ticks.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.line.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.ticks.length=unit(.25, "cm")) +
+  scale_y_continuous(limits = c(-5,15), breaks = c(0,5,10,15))+
+    xlab("")
+
+#ggsave(filename = "../figures/Fig4a.svg", width = 2, height = 2.8)
+
+
+
+#forereef:----
+reef_accr_rat_mod_group2 %>% 
+  epred_draws(newdata = expand_grid(Location = c("lagoon", "forereef shallow"),
+                                    Rats = c("yes", "no")), 
+                  re_formula=NA)%>%
+  mutate(Location = as.factor(Location),
+         Rats = as.factor(Rats),
+         Rats = fct_relevel(Rats, "yes", "no"),
+         Location = fct_relevel(Location, "lagoon", "forereef shallow"))%>%
+  filter(Location == "forereef shallow")%>%
+  ggplot(aes(x = Rats, y = .epred, fill = Rats)) +
+   geom_hline(yintercept = 0, linetype = "dotted") +
+      geom_hline(yintercept = 5, lwd = .7, alpha = .5) +
+    geom_hline(yintercept = 6, lwd = .7, alpha = .7) +
+ stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidth = 1,
+          side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
+  scale_fill_manual(values = c("#993333", "#CB9898"))+
+  ylab(expression(RAPmax~(mm~yr^-1)))+
+          geom_point(data = reef_res_site_dat_refact_forereef, aes(x = Rats, y = reef_accretion_2.0_mm_yr), 
+                 size = .8, alpha = .5, pch = 16, position=position_jitter(height = 0, width = 0.05))+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+        panel.border = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 10),
+        axis.ticks.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.line.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.ticks.length=unit(.25, "cm")) +
+  scale_y_continuous(limits = c(-5,15), breaks = c(0,5,10,15))+
+    xlab("")
+
+#ggsave(filename = "../figures/Fig4c.svg", width = 2, height = 2.8)
+
+```
+
+
+###Plot sediment delivery potential------
+```{r}
+
+#lagoon:----
+reef_sed_rat_mod_group_log2 %>% 
+  epred_draws(newdata = expand_grid(Location = c("lagoon", "forereef shallow"),
+                                    Rats = c("yes", "no")), 
+                  re_formula=NA)%>%
+  mutate(Location = as.factor(Location),
+         Rats = as.factor(Rats),
+         Rats = fct_relevel(Rats, "yes", "no"),
+         Location = fct_relevel(Location, "lagoon", "forereef shallow"),
+         exp_epred = exp(.epred))%>% #back-transformed so all panels are on a standard scale
+  filter(Location == "lagoon")%>%
+  ggplot(aes(x = Rats, y = exp_epred, fill = Rats)) +
+     geom_hline(yintercept = .07, lwd = .7, alpha = .7) +
+  stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidth = 1,
+          side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
+      ylab(expression(paste((mm^3~m^-1~shoreline~yr^-1))))+
+  scale_fill_manual(values = c("#3953A4", "#C9DDF2"))+
+          geom_point(data = reef_res_site_dat_refact_lagoon, aes(x = Rats, y = sediment_delivery_m3_m_yr), 
+                 size = .8, alpha = .5, pch = 16, position=position_jitter(height = 0, width = 0.05))+
+  theme_bw() + 
+ theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+        panel.border = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 10),
+        axis.ticks.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.line.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.ticks.length=unit(.25, "cm")) +
+      scale_y_continuous(limits = c(0, .5),  breaks = c(0, .1, .2, .3, .4, .5))+ 
+         #scale_y_continuous(limits = c(0, .75),  breaks = c(0, .25, .5, .75))+ 
+  xlab("")
+
+
+#ggsave(filename = "../figures/Fig4b.svg", width = 2, height = 2.8)
+
+
+
+reef_sed_rat_mod_group_log2 %>% 
+  epred_draws(newdata = expand_grid(Location = c("lagoon", "forereef shallow"),
+                                    Rats = c("yes", "no")), 
+                  re_formula=NA)%>%
+  mutate(Location = as.factor(Location),
+         Rats = as.factor(Rats),
+         Rats = fct_relevel(Rats, "yes", "no"),
+         Location = fct_relevel(Location, "lagoon", "forereef shallow"),
+           exp_epred = exp(.epred))%>%
+  filter(Location == "forereef shallow")%>%
+  ggplot(aes(x = Rats, y = exp_epred, fill = Rats)) +
+     geom_hline(yintercept = .07, lwd = .7, alpha = .7) +
+  stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidth = 1,
+          side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
+      ylab(expression(paste((mm^3~m^-1~shoreline~yr^-1))))+
+  scale_fill_manual(values = c("#3953A4", "#C9DDF2"))+
+          geom_point(data = reef_res_site_dat_refact_forereef, aes(x = Rats, y = sediment_delivery_m3_m_yr), 
+                 size = .8, alpha = .5, pch = 16, position=position_jitter(height = 0, width = 0.05))+
+  theme_bw() + 
+ theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+        panel.border = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 10),
+        axis.ticks.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.line.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.ticks.length=unit(.25, "cm")) +
+     #  scale_y_continuous(limits = c(0, .75),  breaks = c(0, .25, .5, .75))+ 
+        scale_y_continuous(limits = c(0, .5),  breaks = c(0, .1, .2, .3, .4, .5))+ 
+  xlab("")
+
+#ggsave(filename = "../figures/Fig4d.svg", width = 2, height = 2.8)
+
+```
+
+
+####Plot root data:--------
+```{r}
+
+#colors: low  #046A44, high #72C69E
+
+root_dat_no_out_Tet_refact<-
+  root_dat_no_out_Tet%>%
+   mutate(NativeForestCover = as.factor(NativeForestCover),
+         NativeForestCover = fct_relevel(NativeForestCover, "Under 75", "Over 75"))
+
+root_length_forest_cat_mod_log_no_out %>% 
+  epred_draws(newdata = expand_grid(NativeForestCover = c("Under 75", "Over 75")), 
+                  re_formula=NA)%>%
+  mutate(NativeForestCover = as.factor(NativeForestCover),
+         NativeForestCover = fct_relevel(NativeForestCover, "Under 75", "Over 75"),
+         exp_epred = exp(.epred))%>% ##back-transformed so all panels are on a standard scale
+  ggplot(aes(x = NativeForestCover, y = exp_epred, fill = NativeForestCover)) +
+  stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidth = 1,
+          side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,  
+      ylab(expression(paste(Fine~root~length~(km~m^-2))))+
+  scale_fill_manual(values = c("#046A44", "#72C69E"))+
+          geom_point(data = root_dat_no_out_Tet_refact, aes(x = NativeForestCover, y = Length_Km_m2), 
+                 size = .8, alpha = .5, pch = 16, position=position_jitter(height = 0, width = 0.05))+ #
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+        panel.border = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 10),
+        axis.ticks.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.line.y = element_line(linewidth = .4, linetype = "solid", color = "black"),
+        axis.ticks.length=unit(.25, "cm")) +
+       scale_y_continuous(limits = c(0, 50), breaks = c(0, 10, 20, 30, 40, 50))+
+      xlab("")
+
+
+#ggsave(filename = "../figures/Fig4e.svg", width = 2, height = 2.8)
+
+
+```
