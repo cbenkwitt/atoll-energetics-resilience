@@ -1,0 +1,184 @@
+---
+title: "seabirds-algae-n15"
+author: "CEB"
+date: '2025-07-22'
+output: html_document
+---
+
+
+#also need to establish that seabirds and macroalgae n15 are related to each other. then combine with seabird~soil n15 plot
+
+
+#load packages
+```{r}
+library(tidyverse)
+
+#for bayesian analysis:
+library(brms)
+library(tidybayes)
+
+#for extracting effects:
+library(emmeans)
+
+#for plot:
+library(cowplot)
+
+options(scipen = 9999)
+```
+
+
+##load data
+```{r}
+algae_dat<-read.csv("../data/Supp_Fig_macroalgae_n15.csv")
+
+#seabird data
+sb_dat_by_isl<-read.csv("../data/Fig1_seabirds_by_island.csv") #
+
+#site data (to get region and atoll)
+site_dat<-read.csv("../data/Energetics_islands_Oct.csv")
+
+```
+
+
+#combine data
+```{r}
+#combine with seabird data
+algae_sb_dat_1<-
+  left_join(algae_dat, select(sb_dat_by_isl, c(Island, Ninput_kgha)), by = "Island")
+
+
+#add in atoll----
+algae_sb_dat<-
+  left_join(algae_sb_dat_1, select(site_dat, Atoll, Island), by = "Island")%>%
+   mutate(Atoll_or_Island = case_when(Region == "Seychelles" ~ Island,
+                                     Region == "Tetiaroa" ~ Region,
+                                     Region == "Chagos" ~ Atoll))%>%
+  relocate(Atoll_or_Island, .after = Atoll)
+
+algae_sb_dat
+#n = 278
+
+#check sample sizes:
+algae_sb_dat%>%
+  group_by(Region, Island)%>%
+  summarize(n_macro = length(N15))
+#n = 24 islands (12 in Chagos, all 4 in Seychelles, and 8 in Tetiaroa)
+#n = 6-29 per island
+
+algae_sb_dat%>%
+  group_by(Region, Island, Site.Name)%>%
+  summarize(n_macro = length(N15))
+
+```
+
+
+##run model for seabird nitrogen input versus macroalgal n15
+```{r}
+#from initial plots above, looks like n-input may need to be logged....
+#can't log n15 because goes below 0
+#this will also match soil plot. 
+range(algae_sb_dat$N15, na.rm = TRUE)
+range(algae_sb_dat$Ninput_kgha, na.rm = TRUE)
+
+#center data:
+algae_sb_dat_cs<-
+    algae_sb_dat%>%
+  ungroup()%>%
+  mutate(log_Ninput_kgha = log(Ninput_kgha+1), 
+         Ninput_kgha_c = base::scale(Ninput_kgha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha_c = base::scale(log_Ninput_kgha, center = TRUE, scale = FALSE))
+algae_sb_dat_cs
+
+
+#Soil n15 versus seabird N input centered and log(N input) model:----
+algae_n15_ninput_mod_log<-
+  brm(
+ N15~log_Ninput_kgha_c + (1|Region) + (1|Region:Atoll_or_Island),
+  data = algae_sb_dat_cs, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/algae_n15_ninput_mod_log") 
+print(algae_n15_ninput_mod_log)
+pp_check(algae_n15_ninput_mod_log) #looks okay, but a bit of oversampling peak
+plot(algae_n15_ninput_mod_log) #looks good
+
+#hypothesis test-----
+hypothesis(algae_n15_ninput_mod_log, c("log_Ninput_kgha_c>0"))
+##posterior probabilities = 1
+
+#extract effects------
+algae_n15_ninput_mod_log %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(log(2^b_log_Ninput_kgha_c))
+#0.3994371	0.3435334	0.4582922		0.95	median	hdi
+#each doubling of N input is associated with a change in mean macroalgal N15 of 0.4 units. 
+
+algae_n15_ninput_mod_log %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(log(10^b_log_Ninput_kgha_c))
+#1.326901	1.141193	1.522414	0.95	median	hdi
+#each 10-fold increase of N input is associated with a change in mean macroalgae N15 of 1.33 units. 
+
+#raw:
+algae_n15_ninput_mod_log %>%
+  spread_draws(b_log_Ninput_kgha_c) %>%
+  median_hdi(b_log_Ninput_kgha_c)
+#0.5762659	0.4956139	0.6611758		0.95	median	hdi
+
+#strong positive effect, but lower effect sizes than for soil n15 - makes sense.
+```
+
+
+
+##model plots----
+```{r}
+#n15 by n input, not log:----
+me_algae_n15_ninput<-conditional_effects(algae_n15_ninput_mod_log, prob = .75, effects = 'log_Ninput_kgha_c', plot = FALSE)[[1]]
+mean(algae_sb_dat_cs$log_Ninput_kgha) #2.211732
+
+me_algae_n15_ninput_uncenter<-
+  me_algae_n15_ninput%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+2.211732)
+
+
+##plot to match others:
+algae_n15_sb_plot<-
+algae_sb_dat_cs %>%
+  ggplot(aes(x = log_Ninput_kgha, y = N15)) +
+     geom_point(alpha = .8, color = "#3B7F6C") + #, size = .8
+    geom_line(data = me_algae_n15_ninput_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2, colour = "#3B7F6C") +
+        geom_ribbon(data = me_algae_n15_ninput_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), alpha = .2, fill = "#3B7F6C")+
+  xlab("Seabird nitrogen input (log kg/ha)")+
+      xlab(expression(Seabird~N~input~(kg~ha^-1)))+  
+    scale_x_continuous(labels = c(0, 1, 10, 100, 1000), breaks = c(log(1), log(2), log(11), log(101), log(1001)))+
+  # ylab("Soil N15")+
+  ylab(expression(Macroalgal~delta^15~N))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+                     text = element_text(size = 10))
+
+algae_n15_sb_plot
+
+
+#ggsave(filename = "../figures/Supp_Fig_Seabirds_MacroalgaeN15.jpg", width = 7, height = 7)
+
+
+```
+
+
+##combine with soil plot from other Rmd file:
+```{r}
+
+soil_n15_sb_plot_no_region
+algae_n15_sb_plot
+
+
+Supp_Fig_2<-plot_grid(soil_n15_sb_plot_no_region, algae_n15_sb_plot,  labels = "AUTO", label_fontface = "bold", nrow = 1)
+Supp_Fig_2
+
+#ggsave(Supp_Fig_2, filename = "../figures/Supp_Fig_Seabird_N15.jpg", width = 8.2, height = 4.1)
+
+```
+

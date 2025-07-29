@@ -611,15 +611,13 @@ parrotfish_sb_plota4
 
 
 ###combine and save----
-Fig2_a4<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "auto", label_fontface = "bold", nrow = 1, label_size = 12)
+Fig2_a4<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, label_size = 12, align = "hv", hjust = -2)
 
 
 #ggsave(Fig2_a4, filename = "../figures/Fig2_A4.jpg", width = 8.2, height = 3, units = "in")
 
 
-Fig2_a4_vert<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "auto", label_fontface = "bold", ncol = 1, label_size = 12,
-                        hjust = -3.5, vjust = c(1.5, 1.5, 0))
-
+Fig2_a4_vert<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, align = "hv", labels = "AUTO", label_fontface = "bold", ncol = 1, label_size = 12, hjust = -2.2, vjust = 1.2)
 
 
 #ggsave(Fig2_a4_vert, filename = "../figures/Fig2_A4_vert.jpg", width = 3.5, height = 8)

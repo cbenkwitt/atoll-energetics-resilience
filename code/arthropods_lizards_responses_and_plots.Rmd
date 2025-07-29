@@ -25,6 +25,7 @@ library(ggnewscale)
 options(scipen=999)
 
 library(cowplot)
+library(RColorBrewer)
 
 ```
 
@@ -884,10 +885,10 @@ lizard_vs_forest_soiln15_plot5
 
 
 Supp_Fig_2<-plot_grid(lizard_vs_forest_soiln15_plot5, fly_arthropod_vs_forest_soiln15_plot3, ground_arthropod_vs_forest_soiln15_plot4, pred_arthropod_vs_forest_soiln15_plot2, herb_arthropod_vs_forest_soiln15_plot2, decomp_arthropod_vs_forest_soiln15_plot2, 
-                      labels = "auto", label_fontface = "bold", nrow = 3, hjust = c(-2.5, -2.5, -2.5, -2.5, -4.5, -5.5))
+                      labels = "AUTO", label_fontface = "bold", nrow = 3, hjust = c(-2.5, -2.5, -2.5, -2.5, -2.5, -2.5), align = "hv")
 Supp_Fig_2
 
-#ggsave(Supp_Fig_2, filename = "../figures/Supp_Fig_Arth_Liz.jpg", width = 8, height = 10)
+#ggsave(Supp_Fig_2, filename = "../figures/Supp_Fig3_Arth_Liz.jpg", width = 8, height = 10)
 
 
 ```

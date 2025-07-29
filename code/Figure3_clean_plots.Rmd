@@ -449,13 +449,13 @@ root_length_prod_plota4
 
 ##combine and save----
 
-Fig3<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "auto", label_fontface = "bold", nrow = 1,  label_size = 12, hjust = c(0, .75, -2.5), vjust = 1)
+Fig3<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, align = "v", label_size = 12, hjust = c(0, .75, -2.5), vjust = 1.2, scale =.99)
 Fig3
 
 #ggsave(Fig3, filename = "../figures/Fig3_A4.jpg", width = 8.2, height = 3)
 
 ##vertical:
-Fig3_vert<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "auto", label_fontface = "bold", ncol = 1,  label_size = 12)
+Fig3_vert<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "AUTO", label_fontface = "bold", ncol = 1,  label_size = 12, hjust =c(-2.75, -2.75, -2.75), vjust = c(1.25, .5, .5))
 Fig3_vert
 
 #ggsave(Fig3_vert, filename = "../figures/Fig3_A4_vert.jpg", width = 3.5, height = 8)
