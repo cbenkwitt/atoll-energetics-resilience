@@ -29,7 +29,7 @@ library(ggnewscale)
 #load data
 ```{r}
 #data from eleanor:
-root_dat<-read.csv("../data/RootData4Casey_241125.csv")
+root_dat<-read.csv("../data/RootData4Casey_021225.csv") #3.96 scaling factor for mg C to mj
 root_dat
 
 ```
@@ -75,7 +75,7 @@ pp_check(tet_root_dat_log_c_mj_m2) #looks good!!!
 plot(tet_root_dat_log_c_mj_m2, ask = FALSE)
 
 hypothesis(tet_root_dat_log_c_mj_m2, c("native_perc_c>0", #0.99
-                                        "soiln15_c>0",#0.63
+                                        "soiln15_c>0",#0.62
                                         "native_perc_c:soiln15_c>0")) #0.98
 
 ###extract effects (emmeans)-----
@@ -90,48 +90,49 @@ range(tet_root_dat$SoilN15, na.rm=TRUE) #9.09 19.37
 tet_root_dat_log_c_mj_m2%>%
 emtrends(~native_perc_c, var = "soiln15_c", at = list(native_perc_c = c(-23.40697, 0, 22.53837))) #, type = "response", - need to tell emmeans log-transformed to get response to work: 
 # native_perc_c soiln15_c.trend lower.HPD upper.HPD
-#         -23.4          -0.166   -0.4442     0.106
-#           0.0           0.033   -0.1254     0.214
-#          22.5           0.233   -0.0268     0.482
+#-23.4         -0.1664    -0.442     0.107
+#  0.0          0.0297    -0.120     0.219
+# 22.5          0.2337    -0.039     0.478
+
 
 
 #back transform soil n15 effect for high native forest:----
-exp(0.233) #1.262381
-exp(-0.0268) #0.9735559
-exp(0.482) #1.61931
+exp(0.2337) #1.263265
+exp(-0.039) #0.9617507
+exp(0.478) #1.612845
 
 #back transform soil n15 effect for low native forest:
-exp(-0.166) #0.8470462
-exp(-0.4442) #0.6413371
-exp(0.106) #1.111822
+exp(-0.1664) #0.8467075
+exp(-0.442) #0.6427496
+exp(0.107) #1.112934
 
-1-exp(0.166) #0.1805731 decrease
-1-exp(-0.4442) #0.3586629 decrease
-exp(0.106)-1 #0.1118219 increase
+1-exp(0.1664) #0.1810454 decrease
+1-exp(-0.442) #0.3572504 decrease
+exp(0.107)-1 #0.1129343 increase
 
 
 #at min, mean, max soil n15 these are the effects of native forest on root npp in tetiaroa: -----
 tet_root_dat_log_c_mj_m2%>%
 emtrends(~soiln15_c, var = "native_perc_c", at = list(soiln15_c = c(-4.913, 0, 5.367))) #, type = "response", - need to tell emmeans log-transformed to get response to work: 
 # soiln15_c native_perc_c.trend lower.HPD upper.HPD
-#    -4.91            -0.00101  -0.05399    0.0516
-#      0.00             0.04134   0.00531    0.0732
-#      5.37             0.08463   0.03311    0.1507
+#     -4.91           -0.000322  -0.05926    0.0530
+#      0.00            0.042050   0.00881    0.0773
+#      5.37            0.085417   0.03654    0.1505
 
 
 #back transform native forest effect for high soil n15----
-exp(0.08463) #1.088314
-exp(0.03311) #1.033664
-exp(0.1507) #1.162648
+exp(0.085417) #1.089171
+exp(0.03654) #1.037216
+exp(0.1505) #1.162415
 
 #back transform native forest effect for low soil n15:
-exp(-0.00101) #0.9989905
-exp(-0.05399) #0.9474416
-exp(0.0516) #1.052954
+exp(-0.000322) #0.9996781
+exp(-0.05926) #0.9424617
+exp(0.0530) #1.05443
 
-1-exp(-0.00101) #0.00100949 decrease - 0%
-1-exp(-0.05399) #0.05255842 decrease - 5.3%
-exp(0.0516)-1 #0.05295448 increase - 5.3%
+1-exp(-0.000322) #0.0003219482 decrease - 0.03%
+1-exp(-0.05926) #0.0575383 decrease - 5.8%
+exp(0.0530)-1 #0.05442965 increase - 5.4%
 
 ```
 
@@ -161,9 +162,9 @@ hypothesis(tet_root_dat_log_cs_mj_m2, c("native_perc_cs>0", #0.99
                                         "soiln15_cs>0",#0.62
                                         "native_perc_cs:soiln15_cs>0")) #0.98
 #Hypothesis               Estimate      Est.Error       CI.Lower        CI.Upper    Evid.Ratio      Post.Prob Star
-#(native_perc_cs) > 0	      0.60	      0.26	          0.17	          1.01	      71.07           	0.99	*
-# > 0	                      0.12	      0.32          	-0.35	           0.67	       1.62	            0.62	
-#(native_perc_cs:s... > 0	  0.44      	0.23          	0.08	            0.81	      40.88	          0.98	*
+#(native_perc_cs) > 0	      0.60	      0.25	          0.19	          1.03	      74.47           	0.99	*
+# > 0	                      0.12	      0.32          	-0.35	           0.67	       1.64	            0.62	
+#(native_perc_cs:s... > 0	  0.44      	0.23          	0.08	            0.83	     43.44	          0.98	*
 
 #so looks like native forest has largest relative effect (0.6), compared to interaction (0.44), and then soil (0.12). is this the correct interpretation?
 
@@ -221,8 +222,8 @@ hypothesis(root_length_prod_linear_Tetiaroa_no_c, "NPP_MJ_m2_year_c>0") #1
 root_length_prod_linear_Tetiaroa_no_c %>%
   spread_draws(b_NPP_MJ_m2_year_c) %>%
   median_hdi(b_NPP_MJ_m2_year_c)
-#1.428304	1.155698	1.677394 
-#each one unit increase in productivity associated with change in mean root length by 1.43 km/m2 (no transformations)
+#1.405793	1.153364	1.665224	
+#each one unit increase in productivity associated with change in mean root length by 1.4 km/m2 (no transformations)
 
 ```
 
@@ -310,3 +311,19 @@ root_length_forest_cat_mod_log_no_out %>%
 #4.580279	0.01902669	20.65996	
 
 ```
+
+
+#extract root length values for rats*vegetation:
+```{r}
+
+
+root_dat_no_out_Tet_rat%>%
+  group_by(NativeForestCover, RatStatus)%>%
+  summarize(median_length = median(Length_Km_m2),
+            mean_length = mean(Length_Km_m2),
+            n_length = length(Length_Km_m2),
+            sd_length = sd(Length_Km_m2),
+            sem_length = sd_length/sqrt(n_length))
+
+```
+

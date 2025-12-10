@@ -60,7 +60,7 @@ reef_accr_rat_mod_group2<-readRDS("brms/reef_accr_rat_mod_group2.RDS")
 ##root length data and model-----
 ```{r}
 #load data:
-root_dat<-read.csv("../data/RootData4Casey_241125.csv")
+root_dat<-read.csv("../data/RootData4Casey_021225.csv")
 root_dat
 
 #add region column:
@@ -197,7 +197,7 @@ reef_sed_rat_mod_group_log2 %>%
          exp_epred = exp(.epred))%>% #back-transformed so all panels are on a standard scale
   filter(Location == "lagoon")%>%
   ggplot(aes(x = Rats, y = exp_epred, fill = Rats)) +
-     geom_hline(yintercept = .07, lwd = .7, alpha = .7) +
+   #  geom_hline(yintercept = .07, lwd = .7, alpha = .7) + #old - sediment delvery ref line
   stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidth = 1,
           side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
       ylab(expression(paste((mm^3~m^-1~shoreline~yr^-1))))+
@@ -234,7 +234,7 @@ reef_sed_rat_mod_group_log2 %>%
            exp_epred = exp(.epred))%>%
   filter(Location == "forereef shallow")%>%
   ggplot(aes(x = Rats, y = exp_epred, fill = Rats)) +
-     geom_hline(yintercept = .07, lwd = .7, alpha = .7) +
+   #  geom_hline(yintercept = .07, lwd = .7, alpha = .7) + #old - sediment delvery ref line
   stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidth = 1,
           side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
       ylab(expression(paste((mm^3~m^-1~shoreline~yr^-1))))+

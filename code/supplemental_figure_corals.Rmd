@@ -1,0 +1,272 @@
+---
+title: "Supp_Fig_Corals"
+author: "CEB"
+date: '2025-11-18'
+output: html_document
+---
+
+#load packages
+```{r}
+library(tidyverse)
+
+#scientific notation funny in some of csvs, fix:
+options(scipen=999)
+
+#for plotting
+library(RColorBrewer)
+
+
+```
+
+
+
+#--------seabird n vs. coral photosynthesis-------
+
+#load data and models
+```{r}
+#coral data
+coral_pp_dat<-read.csv("../data/Fig2_acropora_net_pp.csv")
+
+#site data
+site_dat<-read.csv("../data/Energetics_sites_Oct.csv")
+
+#island data
+isl_dat<-read.csv("../data/Energetics_islands_Oct.csv")
+
+#seabird data
+sb_dat_by_isl<-read.csv("../data/Fig1_seabirds_by_island.csv") #this is summed per island
+
+#combine:
+#Mapou messed up again - in site list it's 	Grande Mapou, in pp list it's Ile Mapou (for PP)
+coral_pp_dat2<-
+  coral_pp_dat%>%
+mutate(Site.Name = case_when(Site.Name == "Ile Mapou"~"Grande Mapou",
+                              TRUE~Site.Name))
+
+#pp and energy with site:
+site_dat_marine<-
+  site_dat%>%
+  rename(Site.Name = Marine.Site.Names)
+
+coral_pp_dat_site<-
+  right_join(site_dat_marine, coral_pp_dat2, by = "Site.Name")
+
+coral_pp_dat_site
+#n = 30 fragments
+
+marine_sb_dat_coral_comb<-
+  left_join(coral_pp_dat_site,
+                   sb_dat_by_isl, by = "Island")
+marine_sb_dat_coral_comb
+
+
+#looks good - now center
+marine_sb_dat_coral_combcs<-
+    marine_sb_dat_coral_comb%>%
+  ungroup()%>%
+  mutate(
+         Ninput_kgha_cs = base::scale(Ninput_kgha, center = TRUE, scale = TRUE),
+         Ninput_kgha_c = base::scale(Ninput_kgha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha = log(Ninput_kgha),
+         log_Ninput_kgha_c = base::scale(log_Ninput_kgha, center = TRUE, scale = FALSE),
+)
+marine_sb_dat_coral_combcs
+
+
+#load model:
+acrop_frag_sb_mod_group_log<-readRDS("brms/acrop_frag_sb_mod_group_log.RDS") 
+
+```
+
+
+#acropora fragment plot
+```{r}
+
+#first get overall effect line:
+me_acrop_sb_pp_log<-conditional_effects(acrop_frag_sb_mod_group_log, prob = .75, effects = 'log_Ninput_kgha_c', plot = FALSE)[[1]]
+mean(marine_sb_dat_coral_combcs$log_Ninput_kgha) #0.1950983
+
+me_acrop_sb_pp_log_uncenter<-
+  me_acrop_sb_pp_log%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+0.1950983)
+
+
+acrop_frag_sb_plot<-
+marine_sb_dat_coral_combcs %>%
+  ggplot(aes(x = log_Ninput_kgha, y = Acr_net_PP_umol_cm2_h)) +
+   geom_line(data = me_acrop_sb_pp_log_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2,  colour = "#FB9A99") +
+        geom_ribbon(data = me_acrop_sb_pp_log_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), 
+                    alpha = .2, lwd = 0,  colour = "#FCBBA1", fill = "#FCBBA1")+
+       geom_point(color = "#FCBBA1", fill = "#FCBBA1",size = 2, alpha = .8) + #, size = .8
+    ylab(expression(Acropora~net~photosynthesis~(umol~cm^-2~h^-1)))+
+    xlab(expression(Seabird~N~input~(kg~ha^-1)))+   
+  scale_x_continuous(labels = c(0.1, 1, 10, 100), breaks = c(log(0.1), 0, log(10), log(100)))+
+  theme_bw()+
+ # guides(color = "none")+ #fill = "none"
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+             text = element_text(size = 14),
+        legend.position = c(0.8, 0.8))
+
+acrop_frag_sb_plot
+
+
+#now plot by atoll-----
+#use overall effect line form above
+
+#now get atoll-specific lines:
+me_acrop_sb_pp_log_atoll<-conditional_effects(acrop_frag_sb_mod_group_log, prob = .75, effects = 'log_Ninput_kgha_c', re_formula=NULL, 
+                    conditions = make_conditions(marine_sb_dat_coral_combcs, vars = c("Atoll")), plot = FALSE)[[1]]
+
+mean(marine_sb_dat_coral_combcs$log_Ninput_kgha) #0.1950983
+
+me_acrop_sb_pp_log_atolluncenter<-
+  me_acrop_sb_pp_log_atoll%>%
+  mutate(ninput_unscale = log_Ninput_kgha_c+0.1950983)
+
+##truncated lines for each atoll-----
+marine_sb_dat_coral_combcs %>%
+   filter(Atoll == "Great Chagos Bank")%>%
+  summarize(range(log_Ninput_kgha)) #-3.101003		5.901787	
+
+marine_sb_dat_coral_combcs %>%
+   filter(Atoll == "Salomon")%>%
+  summarize(range(log_Ninput_kgha)) #-3.0681970				0.5636471	
+
+marine_sb_dat_coral_combcs %>%
+   filter(Atoll == "Peros Banhos")%>%
+  summarize(range(log_Ninput_kgha)) #-4.358177				5.232531		
+
+me_acrop_sb_pp_log_gcb<-
+  me_acrop_sb_pp_log_atolluncenter%>%
+  filter(Atoll == "Great Chagos Bank")%>%
+  filter(ninput_unscale>=-3.101003 & ninput_unscale<=5.901787)
+
+me_acrop_sb_pp_log_sal<-
+  me_acrop_sb_pp_log_atolluncenter%>%
+  filter(Atoll == "Salomon")%>%
+  filter(ninput_unscale>=-3.0681970 & ninput_unscale<=0.5636471)
+
+me_acrop_sb_pp_log_pb<-
+  me_acrop_sb_pp_log_atolluncenter%>%
+  filter(Atoll == "Peros Banhos")%>%
+  filter(ninput_unscale>=-4.358177 & ninput_unscale<=5.232531)
+
+acrop_frag_atoll_sb_plot<-
+marine_sb_dat_coral_combcs %>%
+  mutate(Atoll = fct_relevel(Atoll, c("Great Chagos Bank", "Peros Banhos", "Salomon")))%>%
+  ggplot(aes(x = log_Ninput_kgha, y = Acr_net_PP_umol_cm2_h)) +
+    geom_line(data = me_acrop_sb_pp_log_gcb, aes(x = ninput_unscale, y = estimate__,  color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+      geom_line(data = me_acrop_sb_pp_log_pb, aes(x = ninput_unscale, y = estimate__,  color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+         geom_line(data = me_acrop_sb_pp_log_sal, aes(x = ninput_unscale, y = estimate__, color = Atoll), lwd = 1, lty = 2) + #lty = Atoll,
+   geom_line(data = me_acrop_sb_pp_log_uncenter, aes(x = ninput_unscale, y = estimate__), lwd = 1.2,  colour = "#FCBBA1") +
+        geom_ribbon(data = me_acrop_sb_pp_log_uncenter, aes(x = ninput_unscale, y = estimate__, ymin = lower__, ymax=upper__), 
+                    alpha = .2, lwd = 0,  colour = "#FCBBA1", fill = "#FCBBA1")+
+       geom_point(aes(shape = Atoll,  fill = Atoll, color = Atoll),size = 2, alpha = .8) + #, size = .8
+    ylab(expression(italic("Acropora")~net~photosynthesis~(umol~cm^-2~h^-1)))+
+    xlab(expression(Seabird~N~input~(kg~ha^-1)))+
+     scale_x_continuous(labels = c(0.1, 1, 10, 100), breaks = c(log(0.1), 0, log(10), log(100)))+
+  scale_shape_manual(values = c(21, 22, 23))+
+   # scale_fill_brewer(palette = "Reds")+
+   #   scale_colour_brewer(palette = "Reds")+
+  scale_fill_manual(values =c("#FB6A4A", "#DE2D26", "#A50F15"))+
+  scale_color_manual(values = c("#FB6A4A", "#DE2D26", "#A50F15"))+
+  theme_bw()+
+  #guides(lty = "none")+ #fill = "none"
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+             text = element_text(size = 10),
+        legend.background = element_blank(),
+        legend.position = c(0.82, 0.2),
+        legend.key.width=unit(0,"cm"))
+
+acrop_frag_atoll_sb_plot
+
+```
+
+
+
+
+
+####-----Acropora pp energy scaling-------
+
+#load data and model:
+```{r}
+#coral data
+coral_met_function_dat<-read.csv("../data/Fig3a_coral_transect.csv")
+
+#site data (to get region and atoll) - from above
+site_dat2<-
+  site_dat%>%
+  mutate(Site.Name = Marine.Site.Names)
+
+
+coral_met_function_dat_site<-
+  right_join(select(site_dat2, c(Region, Atoll, Island, Site.Name, Rats)), coral_met_function_dat, by = "Site.Name")
+
+coral_met_function_dat_site
+#n = 24 transects
+
+
+#center predictor----
+coral_met_function_dat_site_cs<-
+    coral_met_function_dat_site%>%
+  mutate(coral_net_PP_MJ_m2_yr_cs = base::scale(coral_net_PP_MJ_m2_yr, center = TRUE, scale = TRUE),
+         coral_net_PP_MJ_m2_yr_c = base::scale(coral_net_PP_MJ_m2_yr, center = TRUE, scale = FALSE),
+         acr_net_PP_MJ_m2_yr_cs = base::scale(Acr_net_PP_MJ_m2_yr, center = TRUE, scale = TRUE),
+         acr_net_PP_MJ_m2_yr_c = base::scale(Acr_net_PP_MJ_m2_yr, center = TRUE, scale = FALSE))
+coral_met_function_dat_site_cs
+
+
+
+acrop_met_func_mod_group_c<-readRDS("brms/acrop_met_func_mod_group_c.RDS") 
+
+```
+
+
+#plots
+```{r}
+#effect line:
+me_acrop<-conditional_effects(acrop_met_func_mod_group_c, prob = .75, effects = 'acr_net_PP_MJ_m2_yr_c', plot = FALSE)[[1]]
+mean(coral_met_function_dat_site_cs$Acr_net_PP_MJ_m2_yr) #1.757788
+
+me_acrop_uncenter<-
+  me_acrop%>%
+  mutate(acrop_pp_unscale = acr_net_PP_MJ_m2_yr_c+1.757788)
+
+acrop_energy_prod_plot<-
+coral_met_function_dat_site_cs %>%
+  ggplot(aes(x = Acr_net_PP_MJ_m2_yr, y = Acr_G_kg_m2_yr)) +
+    geom_point(pch = 21, size = 2, colour = "#FCBBA1", fill = "#FCBBA1", alpha = .8) + #, size = .8
+    geom_line(data = me_acrop_uncenter, aes(x = acrop_pp_unscale, y = estimate__), lwd = 1.2, colour = "#FCBBA1") +
+        geom_ribbon(data = me_acrop_uncenter, aes(x = acrop_pp_unscale, ymin = lower__, ymax=upper__), alpha = .2, fill = "#FCBBA1")+
+  theme_bw()+
+    xlab(expression(italic("Acropora")~productivity~(MJ~m^-2~year^-1)))+
+   ylab(expression(atop(italic("Acropora")~"carbonate production", paste((kg~m^-2~year^-1)))))+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(), # remove gridlines
+        panel.grid.minor = element_blank(), #remove gridlines
+        strip.background = element_blank(),
+            text = element_text(size = 10),
+        legend.position=c(.8, .2),
+        legend.box = "horizontal",
+        legend.title = element_text(hjust = .5),
+        legend.box.background = element_rect()
+    )
+acrop_energy_prod_plot
+
+```
+
+
+
+
+#combine plots and save: 
+```{r}
+Supp_Fig_corals<-plot_grid(acrop_frag_atoll_sb_plot, acrop_energy_prod_plot,  labels = "AUTO", label_fontface = "bold", nrow = 1)
+Supp_Fig_corals
+
+ggsave(Supp_Fig_corals, filename = "../figures/Supp_Fig_corals.jpg", width = 8.2, height = 4.1)
+```
+

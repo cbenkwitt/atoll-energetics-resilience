@@ -31,7 +31,7 @@ library(cowplot)
 ###load model and data:
 ```{r}
 #load data-
-root_dat<-read.csv("../data/RootData4Casey_241125.csv")
+root_dat<-read.csv("../data/RootData4Casey_021225.csv")
 
 #add region column:-
 root_dat<-
@@ -57,8 +57,7 @@ print(tet_root_dat_log_c_mj_m2)
 tet_root_dat_log_c_mj_m2 %>%
   spread_draws(`b_native_perc_c:soiln15_c`) %>%
   median_hdi(exp(`b_native_perc_c:soiln15_c`))
-#0.008446786	0.00001482532	0.01728198	0.95	median	hdi #non-exponentiated
-#1.008483	0.9999476	1.017364	#exponentiated
+#1.008512	0.9998536	1.017365		#exponentiated
 
 ```
 
@@ -506,6 +505,7 @@ Fig2_vert
 
 
 #re-saving to increase size for A4 paper:
+#and darken colors in forest plot so they can be seen in the figure
 ```{r}
 ###make font sizes much smaller:
 ##create plot, log-labels for seabird n input: 
@@ -549,19 +549,40 @@ me_npp_int_log_tet_soil_unscale3<-
   me_npp_int_log_tet_soil_unscale2%>%
   mutate(Soil_fact = fct_relevel(Soil_fact, "low", "mid", "high"))
 
+#extract the 3 colors and manually darken them:
+library(colorspace)   # for lighten() and darken()
+pal <- brewer.pal(3, "Greens")
+# Create darker line colors
+line_cols  <- darken(pal, amount = 0.25)
+# Create lighter ribbon colors
+ribbon_cols <- darken(pal, amount = 0.25)
+
+#also manually darken fill scale for points to match lines:
+greens_base <- brewer.pal(9, "Greens")
+greens_dark <- darken(greens_base, amount = 0.25)
+greens_dark_continuous <- colorRampPalette(greens_dark)
+
+
+
 rootnpp_vs_forest_soiln15_plot_log_axisa4<-
 tet_root_dat %>%
   ggplot(aes(x = NativeForestFraction, y = log(NPP_MJ_m2_year))) +
      geom_ribbon(data = me_npp_int_log_tet_soil_unscale3, aes(x = NativeForestFraction, y = estimate__, ymin = lower__, ymax = upper__, fill = Soil_fact), lwd = 0, alpha = .2) +
-geom_line(data = me_npp_int_log_tet_soil_unscale3, aes(x = NativeForestFraction, y = estimate__, colour = Soil_fact), lwd = 1.2) +
-    scale_colour_brewer(direction = 1, palette = "Greens", name ="")+#"YlOrRd"
-  scale_fill_brewer(direction = 1,  palette = "Greens", name = "")+#"YlOrRd"
-        guides(color = guide_legend(direction = "horizontal",  barwidth = .8,   
+geom_line(data = me_npp_int_log_tet_soil_unscale3, aes(x = NativeForestFraction, y = estimate__, colour = Soil_fact), lwd = 1.2) + #
+   # scale_colour_brewer(direction = 1, palette = "Greens", name ="")+#"YlOrRd"
+ # scale_fill_brewer(direction = 1,  palette = "Greens", name = "")+#"YlOrRd"
+  #replace with manually darkened colors:
+     scale_colour_manual(values = line_cols, name ="")+
+  scale_fill_manual(values = ribbon_cols, name = "")+
+  #and also make different linetype to help distinguish:
+#  scale_linetype_manual( values = c( high = "solid", mid  = "longdash", low  = "dashed"),  name = "")+
+        guides(color = guide_legend(direction = "horizontal",  barwidth = .8,  #1.5 
     barheight = .1, override.aes = list(lwd = .4), order = 0)) +
-    #    guides(fill = guide_legend(direction = "horizontal")) +
     new_scale_fill()+
        geom_point(aes(fill =  SoilN15), pch = 21, size = 2, alpha = .9) +
-       scale_fill_distiller(direction = 1,  palette = "Greens")+ 
+     #  scale_fill_distiller(direction = 1,  palette = "Greens")+ 
+  #replace with manually darkened scale:
+         scale_fill_gradientn(colours = greens_dark_continuous(200))+ 
       guides(fill = guide_colorbar(direction = "horizontal",  barwidth = 6,   
     barheight = .2, order = 1, title.position = "top" )) +
       labs(fill = expression(Soil~delta^15~N))+
@@ -614,13 +635,13 @@ parrotfish_sb_plota4
 Fig2_a4<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, label_size = 12, align = "hv", hjust = -2)
 
 
-#ggsave(Fig2_a4, filename = "../figures/Fig2_A4.jpg", width = 8.2, height = 3, units = "in")
+ggsave(Fig2_a4, filename = "../figures/Fig2_A4.jpg", width = 8.2, height = 3, units = "in")
 
 
 Fig2_a4_vert<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, align = "hv", labels = "AUTO", label_fontface = "bold", ncol = 1, label_size = 12, hjust = -2.2, vjust = 1.2)
 
 
-#ggsave(Fig2_a4_vert, filename = "../figures/Fig2_A4_vert.jpg", width = 3.5, height = 8)
+ggsave(Fig2_a4_vert, filename = "../figures/Fig2_A4_vert.jpg", width = 3.5, height = 8)
 
 
 ```

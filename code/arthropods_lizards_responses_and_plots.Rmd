@@ -85,6 +85,18 @@ arthropod_dat_fly_cs<-
          native_perc_c = base::scale(native_perc, center = TRUE, scale = FALSE),
          soiln15_cs = base::scale(SoilN15, center = TRUE, scale = TRUE),
          soiln15_c = base::scale(SoilN15, center = TRUE, scale = FALSE))
+
+
+#check sample sizes:
+arthropod_dat_fly_cs%>%
+  group_by(island)%>%
+  summarize(sample_size = length(station_id))
+
+arthropod_dat_ground_cs%>%
+  group_by(island)%>%
+  summarize(sample_size = length(station_id))
+
+
 ```
 
 
@@ -101,6 +113,10 @@ lizard_dat_cs<-
          native_perc_c = base::scale(native_perc, center = TRUE, scale = FALSE),
          soiln15_cs = base::scale(SoilN15, center = TRUE, scale = TRUE),
          soiln15_c = base::scale(SoilN15, center = TRUE, scale = FALSE))
+
+lizard_dat_cs%>%
+  group_by(island)%>%
+  summarize(sample_size = length(PEU))
 
 lizard_dat_cs_mj<-
  lizard_dat_cs%>%

@@ -19,6 +19,10 @@ library(emmeans)
 #scientific notation funny in some of csvs, fix:
 options(scipen=999)
 
+#for plotting
+library(RColorBrewer)
+
+
 ```
 
 
@@ -26,6 +30,10 @@ options(scipen=999)
 ```{r}
 #coral data
 marine_pp_dat<-read.csv("../data/Fig2c_marine_pp_w_cover.csv")
+
+#coral PP data per fragment: 
+coral_pp_dat<-read.csv("../data/Fig2_acropora_net_pp.csv")
+
 
 #fish/parrotfish data
 marine_energy_dat<-read.csv("../data/Fig2d_marine_energy_transect_w_parrot_v2.csv") 
@@ -51,6 +59,11 @@ marine_pp_dat2<-
 mutate(Site.Name = case_when(Site.Name == "Ile Mapou"~"Grande Mapou",
                               TRUE~Site.Name))
 
+coral_pp_dat2<-
+  coral_pp_dat%>%
+mutate(Site.Name = case_when(Site.Name == "Ile Mapou"~"Grande Mapou",
+                              TRUE~Site.Name))
+
 #pp and energy with site:
 site_dat_marine<-
   site_dat%>%
@@ -60,7 +73,13 @@ marine_pp_dat_site<-
   right_join(site_dat_marine, marine_pp_dat2, by = "Site.Name")
 
 marine_pp_dat_site
-#n = 134 transects
+#n = 24 transects
+
+coral_pp_dat_site<-
+  right_join(site_dat_marine, coral_pp_dat2, by = "Site.Name")
+
+coral_pp_dat_site
+#n = 30 fragments
 
 marine_energy_dat_site<-
   right_join(site_dat_marine, marine_energy_dat, by = "Site.Name")
@@ -77,13 +96,6 @@ marine_energy_dat_site_FrHM<-
 marine_energy_dat_site_FrHM
 
 
-marine_pp_dat_site_FrHM<-
-  marine_pp_dat_site%>%
-  mutate(Site.Name2 = if_else(Site.Name == "Fregate H"|Site.Name=="Fregate M", "Fregate H-M", Site.Name))%>%
-  relocate(Site.Name2, .after = Site.Name)
-marine_pp_dat_site_FrHM
-
-
 ##add in new "atoll" levels-----
 marine_energy_dat_site_FrHM<-
   marine_energy_dat_site_FrHM%>%
@@ -94,15 +106,6 @@ marine_energy_dat_site_FrHM<-
 marine_energy_dat_site_FrHM
 
 
-marine_pp_dat_site_FrHM<-
-  marine_pp_dat_site_FrHM%>%
-  mutate(Atoll_or_Island = case_when(Region == "Seychelles" ~ Island,
-                                     Region == "Tetiaroa" ~ Region,
-                                     Region == "Chagos" ~ Atoll))%>%
-  relocate(Atoll_or_Island, .after = Atoll)
-marine_pp_dat_site_FrHM
-
-
 ```
 
 
@@ -110,13 +113,20 @@ marine_pp_dat_site_FrHM
 ##combine with seabird data----
 ```{r}
 
-marine_pp_dat_site_FrHM
+marine_pp_dat_site
+coral_pp_dat_site
 sb_dat_by_isl
 
 
-#join pp:-----
+#join coral:-----
 marine_sb_dat_pp_comb<-
-  left_join(marine_pp_dat_site_FrHM,
+  left_join(marine_pp_dat_site,
+                   sb_dat_by_isl, by = "Island")
+marine_sb_dat_pp_comb
+
+
+marine_sb_dat_coral_comb<-
+  left_join(coral_pp_dat_site,
                    sb_dat_by_isl, by = "Island")
 marine_sb_dat_pp_comb
 
@@ -481,6 +491,46 @@ coral_sb_dat_sitecs %>%
         legend.key.width=unit(0,"cm"))
 
 coral_sb_plot
+
+
+```
+
+#repeat coral analysis with net photosynthesis (per fragment)
+```{r}
+
+marine_sb_dat_coral_comb
+
+#try centering and scaling predictor, can't log response because net goes below 0----
+range(marine_sb_dat_coral_comb$Acr_net_PP_umol_cm2_h)
+
+marine_sb_dat_coral_combcs<-
+    marine_sb_dat_coral_comb%>%
+  ungroup()%>%
+  mutate(
+         Ninput_kgha_cs = base::scale(Ninput_kgha, center = TRUE, scale = TRUE),
+         Ninput_kgha_c = base::scale(Ninput_kgha, center = TRUE, scale = FALSE),
+         log_Ninput_kgha = log(Ninput_kgha),
+         log_Ninput_kgha_c = base::scale(log_Ninput_kgha, center = TRUE, scale = FALSE),
+)
+marine_sb_dat_coral_combcs
+
+
+##add in group-level effects - Chagos only data so only need atoll----
+#best with log(n input)-----
+acrop_frag_sb_mod_group_log<-
+  brm(
+ Acr_net_PP_umol_cm2_h~log_Ninput_kgha_c + (1|Atoll),
+  data = marine_sb_dat_coral_combcs, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/acrop_frag_sb_mod_group_log") 
+#worked!
+
+print(acrop_frag_sb_mod_group_log)
+pp_check(acrop_frag_sb_mod_group_log) #looks good
+plot(acrop_frag_sb_mod_group_log) #looks good
+hypothesis(acrop_frag_sb_mod_group_log, "log_Ninput_kgha_c>0") #1 (same as before*)
+
 
 
 ```

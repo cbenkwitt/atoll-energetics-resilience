@@ -316,3 +316,41 @@ coral_met_function_dat_site_cs %>%
 coral_energy_prod_plot
 
 ```
+
+
+
+#bayesian analysis - coral metabolism versus carbonate production - ACROPORA only
+```{r}
+#center predictor----
+coral_met_function_dat_site_cs<-
+    coral_met_function_dat_site%>%
+  mutate(coral_net_PP_MJ_m2_yr_cs = base::scale(coral_net_PP_MJ_m2_yr, center = TRUE, scale = TRUE),
+         coral_net_PP_MJ_m2_yr_c = base::scale(coral_net_PP_MJ_m2_yr, center = TRUE, scale = FALSE),
+         acr_net_PP_MJ_m2_yr_cs = base::scale(Acr_net_PP_MJ_m2_yr, center = TRUE, scale = TRUE),
+         acr_net_PP_MJ_m2_yr_c = base::scale(Acr_net_PP_MJ_m2_yr, center = TRUE, scale = FALSE))
+coral_met_function_dat_site_cs
+
+
+##add in group-level effects----
+acrop_met_func_mod_group_c<-
+  brm(
+  Acr_G_kg_m2_yr~acr_net_PP_MJ_m2_yr_c + (1|Atoll), #grouped by Atoll only (all Chagos)
+  data = coral_met_function_dat_site_cs, 
+  iter = 3000, warmup = 1000, chains = 4, cores = 4,
+   control = list(adapt_delta = 0.999, max_treedepth = 15), 
+      file = "brms/acrop_met_func_mod_group_c") 
+print(acrop_met_func_mod_group_c) #now no issues :)
+
+# do some checks:
+pp_check(acrop_met_func_mod_group_c) #looks good
+plot(acrop_met_func_mod_group_c) #looks good 
+
+
+#check probability effect size > 0----
+hypothesis(acrop_met_func_mod_group_c, "acr_net_PP_MJ_m2_yr_c>0")
+#evidence ratio = Inf, posterior probability = 1
+
+```
+
+
+

@@ -32,7 +32,7 @@ library(cowplot)
 ```{r}
 ##load data-----
 #load data-
-root_dat<-read.csv("../data/RootData4Casey_241125.csv")
+root_dat<-read.csv("../data/RootData4Casey_021225.csv")
 
 #add region column:-
 root_dat<-
@@ -63,7 +63,7 @@ root_length_prod_linear_Tetiaroa_no_c<-readRDS("brms/root_length_prod_linear_Tet
 ```
 
 
-#create nice plot for fig3 to coombine with marine data:
+#create nice plot for fig3 to combine with marine data:
 ```{r}
 
 me_npp_bio_lin_Tet<-conditional_effects(root_length_prod_linear_Tetiaroa_no_c, prob = .75, effects = 'NPP_MJ_m2_year_c', plot = FALSE)[[1]]
@@ -452,12 +452,12 @@ root_length_prod_plota4
 Fig3<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, align = "v", label_size = 12, hjust = c(0, .75, -2.5), vjust = 1.2, scale =.99)
 Fig3
 
-#ggsave(Fig3, filename = "../figures/Fig3_A4.jpg", width = 8.2, height = 3)
+ggsave(Fig3, filename = "../figures/Fig3_A4.jpg", width = 8.2, height = 3)
 
 ##vertical:
 Fig3_vert<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "AUTO", label_fontface = "bold", ncol = 1,  label_size = 12, hjust =c(-2.75, -2.75, -2.75), vjust = c(1.25, .5, .5))
 Fig3_vert
 
-#ggsave(Fig3_vert, filename = "../figures/Fig3_A4_vert.jpg", width = 3.5, height = 8)
+ggsave(Fig3_vert, filename = "../figures/Fig3_A4_vert.jpg", width = 3.5, height = 8)
 
 ```
