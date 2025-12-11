@@ -7,7 +7,7 @@ rm(list = ls(all = TRUE))
 
 # Load data ####
 
-df <- read_csv("../data//Seabirds_Energy_Nitrogen.csv") %>%
+df <- read_csv("Data/Seabirds/To_share/Seabirds_Energy_Nitrogen.csv") %>%
   dplyr::select(-c(SeabirdEnergyRequirements_MJha, Ninput_kgha)) %>%
   add_row(Region = "Chagos Archipelago", Island = "South Brother", Species = "Anous minutus") %>%
   add_row(Region = "Chagos Archipelago", Island = "South Brother", Species = "Onychoprion lunatus") %>%
@@ -48,7 +48,20 @@ df <- read_csv("../data//Seabirds_Energy_Nitrogen.csv") %>%
     Island == "Rimatuu" ~ "Rimatu'u",
     Island == "Oroatera" ~ "Horoatera",
     Island == "Yeye" ~ "Ile Yéyé",
-    TRUE ~ Island))
+    Island == "Tauini" ~ "Tauvini",
+    TRUE ~ Island)) %>%
+  mutate(Rats = case_when(
+    Island %in% c("Ahuroa", "Eagle Island", "Felicite",
+                  "Grande Mapou", "Hira'a'anae", "Honu'ea",
+                  "Horoatera", "Ile Anglaise (PB)", "Ile Anglaise (SAL)",
+                  "Ile Fouquet", "Ile Poule", "Ile Yéyé",
+                  "Rimatu'u", "Tauvini", "Tiara'aunu") ~ "Rats",
+    Island %in% c("Ā'ie", "Aride", "Cousine", "Fregate",
+                  "Grand Coquillage", "Ilde de la Passe", "Ile Longue",
+                  "Middle Brother", "Nelsons Island", "Onetahi",
+                  "Reiono", "South Brother", "Tahuna iti",
+                  "Ile de la Passe") ~ "No rats",
+    TRUE ~ NA_character_))
 
 levels(as.factor(df$Species))
 summary(df$Density_birdsha)
@@ -68,8 +81,9 @@ g1 <- ggplot(df %>%
   labs(y = "Seabird species",
        x = "Island",
        fill = "Seabird density (birds/ha)") +
-  ggtitle(expression(bold("A")~"Seychelles"))
+  ggtitle(bquote(bold("A") ~ "Seychelles"))
 
+  # facet_wrap(Rats~., scales = "free_x")
 
 g2 <- ggplot(df %>%
          filter(Region == "Chagos Archipelago"),
@@ -82,7 +96,9 @@ g2 <- ggplot(df %>%
   labs(y = "Seabird species",
        x = "Island",
        fill = "Seabird density (birds/ha)") +
-  ggtitle(expression(bold("B")~"Chagos Archipelago"))
+  ggtitle(bquote(bold("B") ~ "Chagos Archipelago"))
+
+  # facet_wrap(Rats~., scales = "free_x")
 
 g3 <- ggplot(df %>%
          filter(Region == "Tetiaroa"),
@@ -95,7 +111,8 @@ g3 <- ggplot(df %>%
   labs(y = "Seabird species",
        x = "Island",
        fill = "Seabird density (birds/ha)") +
-  ggtitle(expression(bold("C")~"Tetiaroa"))
+  ggtitle(bquote(bold("C") ~ "Tetiaroa"))
+# facet_wrap(Rats~., scales = "free_x")
 
 
 g1 + g2 + g3 +
@@ -105,6 +122,7 @@ g1 + g2 + g3 +
   theme(legend.position = "bottom",
         axis.text.y = element_text(face = "italic"),
         axis.text.x = element_text(angle = 90),
-        title = element_text(size = 8))
+        title = element_text(size = 8),
+        strip.background = element_rect("white"))
 
-ggsave("../figures/Supp_Fig1_Seabird_density_islands.png", width = 8, height = 6)
+ggsave("Plots/Seabird_density_islands_2.png", width = 8, height = 6)
