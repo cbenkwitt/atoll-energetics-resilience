@@ -45,7 +45,7 @@ reef_res_site_dat
 ```
 
 
-#bayesian models for sediment delivery - compare location (forereef versus lagoon) and rat status
+#bayesian models for reef-wide sediment production potential - compare location (forereef versus lagoon) and rat status
 ```{r}
 
 #use log models - sampling way better and then can estimate multiplicative effect (as in figure)
@@ -74,7 +74,7 @@ hypothesis(reef_sed_rat_mod_group_log2, c("Ratsyes+Ratsyes:Locationlagoon <0", #
 ```
 
 
-#try extract estimates from  model for sediment delivery:
+#try extract estimates from  model for sediment production potential:
 ```{r}
 
 reef_sed_rat_mod_group_log2

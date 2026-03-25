@@ -66,6 +66,15 @@ root_length_prod_linear_Tetiaroa_no_c<-readRDS("brms/root_length_prod_linear_Tet
 #create nice plot for fig3 to combine with marine data:
 ```{r}
 
+#extract effects:
+root_length_prod_linear_Tetiaroa_no_c %>%
+  spread_draws(b_NPP_MJ_m2_year_c) %>%
+  median_hdi(b_NPP_MJ_m2_year_c)
+#1.405793	1.153364	1.665224	
+#each one unit increase in productivity associated with change in mean root length by 1.4 km/m2 (no transformations)
+
+
+#make plots: 
 me_npp_bio_lin_Tet<-conditional_effects(root_length_prod_linear_Tetiaroa_no_c, prob = .75, effects = 'NPP_MJ_m2_year_c', plot = FALSE)[[1]]
 
 mean(root_dat_no_out_Tet$NPP_MJ_m2_year) #8.273426
@@ -217,9 +226,6 @@ parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia<-readRDS("brms/parrot_met_func
 
 ###extract effects and plot from final parrotfish models------
 ```{r}
-
-hypothesis(parrot_met_func_mod_group_c_FrHM2_log_log_v3_wTia, "log_parrot_energy_c>0") #1	*
-
 
 ###extract outputs log model--------
 #extract effects----

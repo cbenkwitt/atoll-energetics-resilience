@@ -27,7 +27,7 @@ library(cowplot)
 
 
 
-##reef accretion and sediment delivery data and models-----
+##reef accretion and reef-wide sediment production potential data and models-----
 ```{r}
 #load data:
 reef_res_dat<-read.csv("../data/Fig4_reef_related_resilience.csv")
@@ -182,7 +182,7 @@ reef_accr_rat_mod_group2 %>%
 ```
 
 
-###Plot sediment delivery potential------
+###Plot sediment production potential (reef-wide)------
 ```{r}
 
 #lagoon:----
