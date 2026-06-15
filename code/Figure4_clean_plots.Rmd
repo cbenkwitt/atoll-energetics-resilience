@@ -125,7 +125,7 @@ stat_halfeye(point_interval=median_hdi, .width=.75, pch = 16, size = 3, linewidt
           side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
   ylab(expression(RAPmax~(mm~yr^-1)))+
   scale_fill_manual(values = c("#993333", "#CB9898"))+
-          geom_point(data = reef_res_site_dat_refact_lagoon, aes(x = Rats, y = reef_accretion_2.0_mm_yr), 
+          geom_point(data = reef_res_site_dat_refact_lagoon, aes(x = Rats, y = reef_accretion_2.0_mm_yr_corrected), 
                  size = .8, alpha = .5, pch = 16, position=position_jitter(height = 0, width = 0.05))+
   theme_bw() + 
   theme(panel.grid.major = element_blank(), # remove gridlines
@@ -162,7 +162,7 @@ reef_accr_rat_mod_group2 %>%
           side = "left", width = 1, position=position_dodge(width = 1.2)) + #, slab_alpha = 0.6, fatten_point = 4,    
   scale_fill_manual(values = c("#993333", "#CB9898"))+
   ylab(expression(RAPmax~(mm~yr^-1)))+
-          geom_point(data = reef_res_site_dat_refact_forereef, aes(x = Rats, y = reef_accretion_2.0_mm_yr), 
+          geom_point(data = reef_res_site_dat_refact_forereef, aes(x = Rats, y = reef_accretion_2.0_mm_yr_corrected), 
                  size = .8, alpha = .5, pch = 16, position=position_jitter(height = 0, width = 0.05))+
   theme_bw() + 
   theme(panel.grid.major = element_blank(), # remove gridlines
