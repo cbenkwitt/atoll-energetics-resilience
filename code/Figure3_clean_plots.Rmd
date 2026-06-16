@@ -396,7 +396,8 @@ coral_met_function_dat_site_cs %>%
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-            text = element_text(size = 9.5),
+            text = element_text(size = 8),
+                  axis.text = element_text(size = 8),
         legend.position=c(.8, .2),
         legend.box = "horizontal",
         legend.title = element_text(hjust = .5),
@@ -421,7 +422,8 @@ herb_met_function_dat_site_noSS_FrHM_wTia2 %>%
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-            text = element_text(size = 9.5),
+            text = element_text(size = 8),
+                  axis.text = element_text(size = 8),
         legend.position=c(.8, .2),
         legend.box = "horizontal",
         legend.title = element_text(hjust = .5),
@@ -444,7 +446,8 @@ root_dat_no_out_Tet %>%
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-            text = element_text(size = 9.5),
+            text = element_text(size = 8),
+                  axis.text = element_text(size = 8),
         legend.position=c(.8, .2),
         legend.box = "horizontal",
         legend.title = element_text(hjust = .5),
@@ -453,8 +456,16 @@ root_dat_no_out_Tet %>%
 
 root_length_prod_plota4
 
+
+
+```
+
+
+
 ##combine and save----
 
+```{r}
+###old----
 Fig3<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, align = "v", label_size = 12, hjust = c(0, .75, -2.5), vjust = 1.2, scale =.99)
 Fig3
 
@@ -466,4 +477,13 @@ Fig3_vert
 
 ggsave(Fig3_vert, filename = "../figures/Fig3_A4_vert.jpg", width = 3.5, height = 8)
 
+##correct formatting-----
+Fig3_formatted<-plot_grid(coral_energy_prod_plota4, parrot_energy_sed_plot_log_axisa4, root_length_prod_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, label_size = 9, align = "hv", hjust = -2, label_fontfamily = "Helvetica")
+Fig3_formatted
+
+ggsave(Fig3_formatted, filename = "../figures/Fig3_formatted.pdf", width = 7.25, height = 2.8, units = "in", dpi = 600)
+ggsave(Fig3_formatted, filename = "../figures/Fig3_formatted.svg", width = 7.25, height = 2.8, units = "in", dpi = 600)
+
+
 ```
+

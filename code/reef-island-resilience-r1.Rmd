@@ -223,8 +223,8 @@ emmeans("Rats",
 #HPD interval probability: 0.95 
 
 #so that equals: 
-3.58/1.42 #2.521127 times higher on lagoons
-5.92/3.27 #1.810398 times higher on forereefs
+3.58/1.42 #2.521127 times higher on forereef
+5.92/3.27 #1.810398 times higher on lagoonal
 
 ```
 

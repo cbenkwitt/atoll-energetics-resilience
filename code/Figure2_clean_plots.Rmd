@@ -103,7 +103,7 @@ geom_line(data = me_npp_int_log_tet_soil_unscale2, aes(x = NativeForestFraction,
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-              text = element_text(size = 14),
+              text = element_text(size = 8),
         legend.position=c(.2, .8),
         legend.box = "horizontal",
         legend.title = element_text(hjust = .5),
@@ -307,7 +307,7 @@ marine_sb_energy_dat_cs %>%
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-             text = element_text(size = 14),
+             text = element_text(size = 8),
         legend.position='none')
 
 parrotfish_sb_plot
@@ -469,7 +469,7 @@ coral_sb_dat_sitecs %>%
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-             text = element_text(size = 14),
+             text = element_text(size = 8),
         legend.position = c(0.8, 0.82),
         legend.key.width=unit(0,"cm"),
         legend.background = element_blank(),
@@ -530,8 +530,9 @@ coral_sb_dat_sitecs %>%
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-             text = element_text(size = 10),
-        legend.position = c(0.79, 0.85),
+             text = element_text(size = 8),
+          axis.text = element_text(size = 8),
+        legend.position = c(0.76, 0.85),
                legend.key.width=unit(0,"cm"),
         legend.key.spacing.y = unit(-6, "pt"),
          legend.key.spacing.x = unit(0, "pt"),
@@ -593,7 +594,8 @@ geom_line(data = me_npp_int_log_tet_soil_unscale3, aes(x = NativeForestFraction,
       theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-             text = element_text(size = 10),
+             text = element_text(size = 8),
+          axis.text = element_text(size = 8),
         legend.position=c(.35, .9),
         legend.box = "vertical",
         legend.direction="horizontal",
@@ -624,14 +626,23 @@ marine_sb_energy_dat_cs %>%
     theme(panel.grid.major = element_blank(), # remove gridlines
         panel.grid.minor = element_blank(), #remove gridlines
         strip.background = element_blank(),
-             text = element_text(size = 10),
+             text = element_text(size = 8),
+          axis.text = element_text(size = 8),
         legend.position='none')
 
 parrotfish_sb_plota4
 
 
 
+
+
+```
+
+
 ###combine and save----
+
+```{r}
+#old----
 Fig2_a4<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, label_size = 12, align = "hv", hjust = -2)
 
 
@@ -642,6 +653,14 @@ Fig2_a4_vert<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plot
 
 
 ggsave(Fig2_a4_vert, filename = "../figures/Fig2_A4_vert.jpg", width = 3.5, height = 8)
+
+
+##re-format-----
+Fig2_formatted<-plot_grid(rootnpp_vs_forest_soiln15_plot_log_axisa4, coral_sb_plota4, parrotfish_sb_plota4, labels = "AUTO", label_fontface = "bold", nrow = 1, label_size = 9, align = "hv", hjust = -2, label_fontfamily = "Helvetica")
+Fig2_formatted
+
+ggsave(Fig2_formatted, filename = "../figures/Fig2_formatted.pdf", width = 7.25, height = 2.8, units = "in", dpi = 600)
+ggsave(Fig2_formatted, filename = "../figures/Fig2_formatted.svg", width = 7.25, height = 2.8, units = "in", dpi = 600)
 
 
 ```
